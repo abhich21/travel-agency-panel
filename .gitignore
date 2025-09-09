@@ -1,0 +1,31 @@
+# Composer dependencies
+/vendor/
+
+# Environment variables
+# This is crucial for security. It prevents sensitive data like API keys
+# and database credentials from being committed to the repository.
+.env
+.env.production
+.env.local
+
+# Configuration files with credentials
+# The user's php_config.php file contains sensitive credentials
+php_config.php
+
+# PHP temporary files and logs
+*.log
+*.sql
+/temp/
+/tmp/
+
+IDE-specific files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+User-uploaded files (if stored locally)
+While your application uses S3, it's good practice to ignore any
+local upload directories if they exist.
+/uploads/
+/assets/uploaded/
