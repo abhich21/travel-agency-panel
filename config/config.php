@@ -10,9 +10,16 @@ define('CURRENT_PAGE', basename($_SERVER['REQUEST_URI']));
 |--------------------------------------------------------------------------
 | DATABASE CONFIGURATION
 |--------------------------------------------------------------------------
+
  */
+
+require __DIR__ . '/../vendor/autoload.php';
+// DOTENV
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->load();
+
 // e.g., localhost
-$servername = $_ENV['DB_SERVERNAME'];; 
+$servername = $_ENV['DB_SERVERNAME'];
 $username = $_ENV['DB_USERNAME'];
 $password = $_ENV['DB_PASSWORD'];
 $dbname = $_ENV['DB_NAME'];

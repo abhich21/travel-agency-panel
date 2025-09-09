@@ -1,5 +1,5 @@
 <?php
-$bucketName = $_ENV['DB_NAME'];
+$bucketName = $_ENV['BUCKET_NAME'];
 $IAM_KEY = $_ENV['AWS_IAM_KEY'];
 $IAM_SECRET = $_ENV['AWS_IAM_SECRET'];
 $s3_fileurl="https://commanbucetforevents.s3.ap-south-1.amazonaws.com";
@@ -10,12 +10,13 @@ $s3_fileurl="https://commanbucetforevents.s3.ap-south-1.amazonaws.com";
 // require '../vendor/autoload.php';
 require __DIR__ . '/../vendor/autoload.php';
 // DOTENV
-$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
 
 // AWS 
 use Aws\S3\S3Client;
 use Aws\Exception\AwsException;
+use Aws\S3\Exception\S3Exception;
 
 // Create an S3 client
 $s3Client = new S3Client([
@@ -28,68 +29,70 @@ $s3Client = new S3Client([
 ]);
 
 // Function to upload file to S3
-function uploadToS3($s3Client, $bucketName, $file, $s3FolderName) {
+function uploadToS3($s3Client, $bucketName, $file, $title, $s3FolderName) {
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-        return null;
+        return ['success' => false, 'error' => 'File upload failed with error code: ' . $file['error']];
     }
 
-    // $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $newFileName = basename($file['name']);
-    $key = "$s3FolderName/$newFileName";
-
-    // Get the MIME type based on the file content
-    $fileMimeType = mime_content_type($file['tmp_name']); // or use finfo_file() for more accuracy
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $newFileName = str_replace(' ', '-', strtolower($title)) . '.' . $ext;
 
     try {
+        $key = 'travel-agency-panel/' . $title . '/' . $s3FolderName . '/' . $newFileName;
         $result = $s3Client->putObject([
-            'Bucket' => $bucketName,
-            'Key'    => $key,
+            'Bucket'     => $bucketName,
+            'Key'        => $key,
             'SourceFile' => $file['tmp_name'],
-            'ContentType' => $fileMimeType,  // Set the Content-Type here
         ]);
         
-        return $result['ObjectURL'];
-    } catch (AwsException $e) {
-        error_log('S3 Upload Error: ' . $e->getMessage());
-        return null;
+        return ['success' => true, 'url' => $result['ObjectURL']];
+    } catch (S3Exception $e) {
+        // Log the detailed S3 error
+        error_log("S3 upload error: " . $e->getMessage());
+        return ['success' => false, 'error' => 'S3 upload failed: ' . $e->getAwsErrorMessage()];
     }
 }
 
+
 /**
- * Delete a file from an S3 bucket
- * 
- * @param object $s3Client AWS S3 client instance
- * @param string $bucketName Name of the S3 bucket
- * @param string $fileUrl Full URL of the file to delete
- * @return bool True if deletion was successful, false otherwise
+ * Deletes an object from an S3 bucket.
+ *
+ * @param S3Client $s3Client The S3 client instance.
+ * @param string $bucketName The name of the S3 bucket.
+ * @param string $fileUrl The URL of the object to delete.
+ * @return bool True on success, false on failure.
  */
-function deleteFromS3($s3Client, $bucketName, $fileUrl) {
+function deleteFromS3($s3Client, $bucketName, $fileUrl)
+{
     try {
-        // Extract the key from the URL and URL-decode it
-        $urlParts = parse_url($fileUrl);
-        // Get the path and decode it to handle special characters
-        $key = isset($urlParts['path']) ? ltrim(urldecode($urlParts['path']), '/') : null;
-        
-        if ($key === null) {
-            error_log('S3 Delete Error: Could not parse key from URL.');
+        // Extract the object key from the URL
+        $parsedUrl = parse_url($fileUrl);
+        $objectKey = ltrim($parsedUrl['path'], '/');
+
+        // Check for virtual-hosted style URL (bucket name in the path)
+        if (strpos($objectKey, $bucketName . '/') === 0) {
+            $objectKey = substr($objectKey, strlen($bucketName) + 1);
+        }
+
+        if (empty($objectKey)) {
+            error_log("Invalid S3 object key derived from URL: " . $fileUrl);
             return false;
         }
 
-        // Delete the object
-        $result = $s3Client->deleteObject([
+        $s3Client->deleteObject([
             'Bucket' => $bucketName,
-            'Key'    => $key,
+            'Key'    => $objectKey,
         ]);
-        
+
         return true;
-    } catch (AwsException $e) {
-        error_log('S3 Delete Error: ' . $e->getMessage());
+    } catch (S3Exception $e) {
+        error_log("Failed to delete S3 object: " . $e->getMessage());
         return false;
     }
 }
 
 /**
- * Downloads a file from an S3 bucket and returns its content.
+ * Downloads a file from an S3 bucket by its public URL.
  *
  * @param S3Client $s3Client The S3 client instance.
  * @param string $bucketName The name of the S3 bucket.
@@ -125,13 +128,7 @@ function downloadFromS3($s3Client, $bucketName, $imageUrl)
 
         return (string) $result['Body'];
     } catch (S3Exception $e) {
-        error_log("Failed to download S3 object from URL: " . $imageUrl . " with key: " . $objectKey . " - Error: " . $e->getMessage());
-        return null;
-    } catch (Exception $e) {
-        error_log("An unexpected error occurred: " . $e->getMessage());
+        error_log("Failed to download S3 object from URL: " . $imageUrl . " with key: " . $objectKey . ". Error: " . $e->getMessage());
         return null;
     }
 }
-
-?>
-
