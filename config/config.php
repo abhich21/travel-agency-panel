@@ -51,13 +51,13 @@ $apiBaseUrl='http://localhost/hunt/admin/api/index.php';
 $draw_passkey = '9876';
 
 
-$adminArr = [
-    [
-        'email' => 'admin@masterstroke.com',
-        'password' => '123456',
-        'role' => 'admin'
-    ]
-];
+// $adminArr = [
+//     [
+//         'email' => 'admin@masterstroke.com',
+//         'password' => '123456',
+//         'role' => 'admin'
+//     ]
+// ];
 
 
 

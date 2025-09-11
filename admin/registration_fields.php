@@ -30,7 +30,7 @@ $registered_fields = [
     ['column' => 'phone', 'label' => 'Phone'],
     ['column' => 'location', 'label' => 'Location'],
     ['column' => 'govt_id', 'label' => 'Government ID'],
-    ['column' => 'govt_id_link', 'label' => 'Government ID Link'],
+    ['column' => 'govt_id_link', 'label' => 'Government ID Photo'],
     ['column' => 'food', 'label' => 'Food Preference']
 ];
 
