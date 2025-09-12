@@ -140,7 +140,7 @@ if ($fields_data && !empty($fields_data['fields'])) {
                                 <?php endif; ?>
                             <?php endforeach; ?>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-3">Add User</button>
+                        <button type="submit" class="btn btn-primary mt-3 btn-custom">Add User</button>
                     </form>
                 </div>
 
@@ -154,7 +154,7 @@ if ($fields_data && !empty($fields_data['fields'])) {
                                 Please ensure the first row of your Excel file contains headers that match your selected registration fields (e.g., 'name', 'email', 'phone').
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success mt-3">Upload and Add Users</button>
+                        <button type="submit" class="btn btn-success mt-3 btn-custom">Upload and Add Users</button>
                     </form>
                 </div>
             </div>
@@ -180,6 +180,23 @@ if ($fields_data && !empty($fields_data['fields'])) {
     </main>
 
     <?php include 'footer.php'; ?>
+    <style>
+        .btn-custom {
+            background-color: <?php echo $nav_bg_color; ?> !important;
+            color: <?php echo $nav_text_color; ?> !important;
+        }
+        .btn-custom:hover {
+        /* Mix the base color with 10% black to darken it */
+        background-color: color-mix(in srgb, <?php echo $nav_bg_color; ?>, black 10%) !important;
+        color: color-mix(in srgb, <?php echo $nav_text_color; ?>, black 10%) !important;
+        }
+
+        .btn-custom:active {
+        /* Mix the base color with 20% black for an "active" or "pressed" state */
+        background-color: color-mix(in srgb, <?php echo $nav_bg_color; ?>, black 20%) !important;
+        color: color-mix(in srgb, <?php echo $nav_text_color; ?>, black 20%) !important;
+        }
+    </style>
     <script>
         $(document).ready(function() {
             <?php
