@@ -26,6 +26,12 @@ if (isset($_GET['view']) && !empty($_GET['view'])) {
 
 // --- 2. ACTIVE PAGE HIGHLIGHTING ---
 $current_page = basename($_SERVER['PHP_SELF']);
+// +++ START NEW CODE +++
+// --- 3. CHECK LOGIN STATUS ---
+// This file is included by pages that ALREADY started the session (like login.php, my_qr_code.php, etc)
+// So we can safely check the session variable here.
+$is_logged_in = (isset($_SESSION['attendee_logged_in']) && $_SESSION['attendee_logged_in'] === true);
+// +++ END NEW CODE +++
 ?>
 
 <!DOCTYPE html>
@@ -147,14 +153,22 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     echo "</li>";
                 }
 
+ // --- PUBLIC LINKS (Always Show) ---
                 nav_item('home.php', 'Home', 'fas fa-home', $current_page, $nav_text_color, $org_title);
-                nav_item('registration.php', 'Registration', 'fas fa-user-plus', $current_page, $nav_text_color, $org_title, 'nav-top-registration');
                 nav_item('agenda.php', 'Agenda', 'fas fa-calendar-alt', $current_page, $nav_text_color, $org_title);
                 nav_item('venue.php', 'Venue', 'fas fa-map-marker-alt', $current_page, $nav_text_color, $org_title);
-                nav_item('my_qr_code.php', 'My QR Code', 'fas fa-qrcode', $current_page, $nav_text_color, $org_title, 'nav-top-qr', true);
-                nav_item('my_ticket.php', 'My Ticket', 'fas fa-ticket-alt', $current_page, $nav_text_color, $org_title, 'nav-top-ticket', true);
                 nav_item('faq.php', 'FAQs', 'fas fa-question-circle', $current_page, $nav_text_color, $org_title);
-                // Dropdown for the rest
+
+                // --- CONDITIONAL LINKS (Based on Login Status) ---
+                if ($is_logged_in):
+                    // --- USER IS LOGGED IN ---
+                    nav_item('my_account.php', 'My Account', 'fas fa-user-circle', $current_page, $nav_text_color, $org_title);
+                    nav_item('logout.php', 'Logout', 'fas fa-sign-out-alt', $current_page, $nav_text_color, $org_title);
+                else:
+                    // --- USER IS LOGGED OUT ---
+                    nav_item('registration.php', 'Registration', 'fas fa-user-plus', $current_page, $nav_text_color, $org_title);
+                    nav_item('login.php', 'Login', 'fas fa-sign-in-alt', $current_page, $nav_text_color, $org_title);
+                endif;                // Dropdown for the rest
                 ?>
                  <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: <?php echo $nav_text_color; ?>;">
@@ -185,8 +199,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         
         mobile_nav_item('home.php', 'Home', 'fas fa-home', $current_page, $nav_text_color, $org_title);
         mobile_nav_item('agenda.php', 'Agenda', 'fas fa-calendar-alt', $current_page, $nav_text_color, $org_title);
-        mobile_nav_item('my_qr_code.php', 'QR Code', 'fas fa-qrcode', $current_page, $nav_text_color, $org_title, 'nav-bottom-qr', true);
-        mobile_nav_item('gallery.php', 'Gallery', 'fas fa-images', $current_page, $nav_text_color, $org_title);
+mobile_nav_item('my_account.php', 'Account', 'fas fa-user-circle', $current_page, $nav_text_color, $org_title);        mobile_nav_item('gallery.php', 'Gallery', 'fas fa-images', $current_page, $nav_text_color, $org_title);
         ?>
         <li class="nav-item">
             <a class="nav-link" style="color: <?php echo $nav_text_color; ?>;" href="#" data-bs-toggle="offcanvas" data-bs-target="#moreMenu">
@@ -210,22 +223,31 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 echo "<a id='$id' href='$page?view=" . urlencode($org_title) . "' class='list-group-item list-group-item-action $hidden_class' style='color: $color;'><i class='$icon me-3'></i>$title</a>";
             }
 
-            offcanvas_item('registration.php', 'Registration', 'fas fa-user-plus', $nav_text_color, $org_title, 'nav-offcanvas-registration');
-            offcanvas_item('my_ticket.php', 'My Ticket', 'fas fa-ticket-alt', $nav_text_color, $org_title, 'nav-offcanvas-ticket', true);
-            offcanvas_item('venue.php', 'Venue Details', 'fas fa-map-marker-alt', $nav_text_color, $org_title);
+           if ($is_logged_in):
+    // Show "My Ticket" if logged IN
+offcanvas_item('my_account.php', 'My Account', 'fas fa-user-circle', $nav_text_color, $org_title);else:
+    // Show "Registration" and "Login" if LOGGED OUT
+    offcanvas_item('registration.php', 'Registration', 'fas fa-user-plus', $nav_text_color, $org_title);
+    offcanvas_item('login.php', 'Login', 'fas fa-sign-in-alt', $nav_text_color, $org_title);
+endif;            offcanvas_item('venue.php', 'Venue Details', 'fas fa-map-marker-alt', $nav_text_color, $org_title);
             offcanvas_item('faq.php', 'FAQs', 'fas fa-question-circle', $nav_text_color, $org_title);
             offcanvas_item('fun_zone.php', 'Fun Zone', 'fas fa-gamepad', $nav_text_color, $org_title);
             offcanvas_item('leaderboard.php', 'Leaderboard', 'fas fa-trophy', $nav_text_color, $org_title);
             offcanvas_item('notifications.php', 'Notifications', 'fas fa-bell', $nav_text_color, $org_title);
             offcanvas_item('helpdesk.php', 'Helpdesk', 'fas fa-headset', $nav_text_color, $org_title);
-            ?>
+            // +++ ADD THIS NEW LOGOUT BLOCK +++
+        if ($is_logged_in): ?>
+            <hr style="border-color: <?php echo $nav_text_color . '40'; ?>;">
+            <?php offcanvas_item('logout.php', 'Logout', 'fas fa-sign-out-alt', $nav_text_color, $org_title); ?>
+        <?php endif; ?>
+            
         </div>
     </div>
 </div>
 
 
 <!-- --- 5. JAVASCRIPT FOR CONDITIONAL LINKS --- -->
-<script>
+<!-- <script>
 document.addEventListener('DOMContentLoaded', function() {
     const isRegistered = localStorage.getItem('event_user_registered_<?php echo urlencode($org_title); ?>');
 
@@ -237,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('#nav-top-registration, #nav-offcanvas-registration').forEach(el => el.classList.add('d-none'));
     }
 });
-</script>
+</script> -->
 
 </body>
 </html>

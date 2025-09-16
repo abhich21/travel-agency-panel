@@ -4,8 +4,16 @@ $IAM_KEY = $_ENV['AWS_IAM_KEY'];
 $IAM_SECRET = $_ENV['AWS_IAM_SECRET'];
 $s3_fileurl="https://commanbucetforevents.s3.ap-south-1.amazonaws.com";
 
+// In config/helper_function.php
+// In config/helper_function.php
+// REMOVE all other 'use Endroid\QrCode\...' lines
+// ADD these three lines
 
-
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\Writer\PngWriter;
 // Configure AWS SDK
 // require '../vendor/autoload.php';
 require __DIR__ . '/../vendor/autoload.php';
@@ -130,5 +138,61 @@ function downloadFromS3($s3Client, $bucketName, $imageUrl)
     } catch (S3Exception $e) {
         error_log("Failed to download S3 object from URL: " . $imageUrl . " with key: " . $objectKey . ". Error: " . $e->getMessage());
         return null;
+    }
+}
+
+
+/**
+ * Generates a QR code using the Builder syntax and uploads it to S3.
+ * This is the new function built using the exact logic from your add_user.php file.
+ */
+function generateAndUploadQrCode($s3Client, $bucketName, $qrData, $orgTitle) {
+    if (empty($qrData)) {
+        return ['success' => false, 'error' => 'QR code data cannot be empty.'];
+    }
+
+    $temp_file = null;
+
+    try {
+        // This is the exact logic from your add_user.php file [cite: add_user.php]
+        $result = new Builder(
+            writer: new PngWriter(),
+            writerOptions: [],
+            data: $qrData,
+            encoding: new Encoding('UTF-8'),
+            errorCorrectionLevel: ErrorCorrectionLevel::High,
+            size: 300,
+            margin: 10,
+            roundBlockSizeMode: RoundBlockSizeMode::Margin
+        );
+
+        $builtResult = $result->build();
+        $temp_file = tempnam(sys_get_temp_dir(), 'qr_');
+        $builtResult->saveToFile($temp_file);
+
+        $mock_file = [
+            'name' => 'qr_' . md5($qrData) . '.png',
+            'type' => 'image/png',
+            'tmp_name' => $temp_file,
+            'error' => UPLOAD_ERR_OK,
+            'size' => filesize($temp_file),
+        ];
+
+        // The folder is changed to 'qrcodes' to match the registration page logic
+        $upload_result = uploadToS3($s3Client, $bucketName, $mock_file, $orgTitle, 'qrcodes');
+        
+        if (isset($upload_result['success']) && $upload_result['success']) {
+            $qr_code_link = $upload_result['url'];
+            unlink($temp_file);
+            return ['success' => true, 'url' => $qr_code_link];
+        } else {
+            throw new Exception($upload_result['error'] ?? 'Unknown S3 upload error.');
+        }
+
+    } catch (Exception $e) {
+        if ($temp_file && file_exists($temp_file)) {
+            unlink($temp_file);
+        }
+        return ['success' => false, 'error' => "QR code generation or upload failed: " . $e->getMessage()];
     }
 }

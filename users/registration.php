@@ -1,10 +1,34 @@
 <?php
 // registration.php - Dynamic Event Registration Page
+// +++ ADD THESE TWO LINES FOR TEMPORARY DEBUGGING +++
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Also log to a file
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/php-error.log');
+
+
+// +++ ADD THIS LINE FOR OUR TEST +++
+
+
 
 // --- 1. ESTABLISH DATABASE CONNECTION & THEME ---
 session_start();
 require_once '../config/config.php';
 require_once '../config/helper_function.php';
+require_once '../vendor/autoload.php';
+
+// +++ ADD THIS NEW BLOCK OF USE STATEMENTS +++
+// use Endroid\QrCode\Builder\Builder;
+// use Endroid\QrCode\Encoding\Encoding;
+// use Endroid\QrCode\ErrorCorrectionLevel;
+// use Endroid\QrCode\RoundBlockSizeMode;
+// use Endroid\QrCode\Writer\PngWriter;
+
+use Endroid\QrCode\QrCode;
+// +++ END OF NEW BLOCK +++
 
 $nav_bg_color = "#1a1a1a";
 $nav_text_color = "#ffffff";
@@ -43,74 +67,161 @@ if (isset($_GET['view']) && !empty($_GET['view']) && isset($conn)) {
 // --- 3. HANDLE FORM SUBMISSION (SERVER-SIDE) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($organization_id)) {
     
-    // Place this inside the "if ($_SERVER['REQUEST_METHOD'] === 'POST')" block in registration.php
-
-$govt_id_photo_url = null;
-if (isset($_FILES['govt_id_link']) && $_FILES['govt_id_link']['error'] === UPLOAD_ERR_OK) {
-    
-    // We need a unique identifier for the user. Email is a good choice.
-    $user_identifier = isset($_POST['email']) ? $_POST['email'] : 'user_' . time();
-
-    // Call the same helper function you use in create_user.php
-    // The helper function needs to be included, likely in config.php or helper_function.php
-    $upload_result = uploadToS3($s3Client, $bucketName, $_FILES['govt_id_link'], $user_identifier, 'govt-ids');
-    
-    if ($upload_result['success']) {
-        $govt_id_photo_url = $upload_result['url'];
-    } else {
-        // If the upload fails, stop and send an error message
+    // --- Data Validation ---
+    $valid_data = [];
+    $errors = [];
+     // +++ START NEW PASSWORD VALIDATION +++
+    if (!isset($_POST['password']) || empty(trim($_POST['password']))) {
+        $errors[] = "Password is required.";
+    } elseif (!isset($_POST['confirm_password']) || trim($_POST['password']) !== trim($_POST['confirm_password'])) {
+        $errors[] = "Passwords do not match.";
+    }
+    // +++ END NEW PASSWORD VALIDATION +++
+    foreach ($form_fields as $field) {
+        $column = $field['field'];
+        if ($column == 'govt_id_link') continue; // Skip file upload for now
+        
+        if (isset($_POST[$column]) && !empty(trim($_POST[$column]))) {
+            $valid_data[$column] = trim($_POST[$column]);
+        } else {
+            // You can add more specific required fields here if needed
+            if (in_array($column, ['name', 'email'])) {
+                 $errors[] = "The " . htmlspecialchars($field['label']) . " field is required.";
+            }
+        }
+    }
+       if (isset($_POST['password'])) {
+        $valid_data['password'] = trim($_POST['password']);
+    }
+    if (!empty($errors)) {
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'Failed to upload ID photo: ' . $upload_result['error']]);
+        echo json_encode(['status' => 'error', 'message' => implode("\n", $errors)]);
         exit;
     }
-}
-    // Dynamically build the list of columns and placeholders for the SQL query
-    $columns = ['organization_id'];
-    $placeholders = ['?'];
-    $bind_types = 'i';
-    $bind_values = [$organization_id];
+      
 
-    // ... and replace it with this one.
-foreach ($form_fields as $field) {
-    $field_name = $field['field'];
-    
-    // Check if it's our special photo field
-    if ($field_name === 'govt_id_link' && $govt_id_photo_url !== null) {
-        $columns[] = '`govt_id_link`';
-        $placeholders[] = '?';
-        $bind_types .= 's';
-        $bind_values[] = $govt_id_photo_url;
-    } 
-    // Handle all other standard text fields
-    elseif (isset($_POST[$field_name]) && $field_name !== 'govt_id_link') {
-        $columns[] = "`" . $field_name . "`";
-        $placeholders[] = '?';
-        $bind_types .= 's';
-        $bind_values[] = htmlspecialchars(strip_tags($_POST[$field_name]));
-    }
-}
-
-    if (count($columns) > 1) { // Only proceed if there are fields to insert
-        $sql = "INSERT INTO registered (" . implode(', ', $columns) . ") VALUES (" . implode(', ', $placeholders) . ")";
-        
-        $stmt_insert = $conn->prepare($sql);
-        // Use the splat operator (...) to pass array values as individual arguments
-        $stmt_insert->bind_param($bind_types, ...$bind_values);
-
-        if ($stmt_insert->execute()) {
-            // Send a success response back to the JavaScript
-            header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+    // --- Government ID Upload ---
+    $govt_id_link = null;
+    if (isset($_FILES['govt_id_link']) && $_FILES['govt_id_link']['error'] === UPLOAD_ERR_OK) {
+        $org_title_safe = str_replace(' ', '-', strtolower($org_title));
+        $upload_result = uploadToS3($s3Client, $bucketName, $_FILES['govt_id_link'], $org_title_safe, 'govt-ids');
+        if ($upload_result['success']) {
+            $govt_id_link = $upload_result['url'];
         } else {
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'message' => 'Database error. Please try again.']);
+            echo json_encode(['status' => 'error', 'message' => 'Failed to upload Government ID: ' . $upload_result['error']]);
+            exit;
         }
-        $stmt_insert->close();
-    } else {
-        header('Content-Type: application/json');
-        echo json_encode(['status' => 'error', 'message' => 'No fields to register.']);
     }
-    exit(); // Stop script execution after handling the POST request
+
+// In registration.php, replace the old code with this:
+
+    // --- QR Code Generation and Upload ---
+    $qr_code_link = null;
+    $qr_data_string = $valid_data['email'] ?? $valid_data['phone'] ?? 'user_' . time();
+    $org_title_safe = str_replace(' ', '-', strtolower($org_title));
+
+    // Call our new, reliable function from helper_function.php
+    $qr_result = generateAndUploadQrCode($s3Client, $bucketName, $qr_data_string, $org_title_safe);
+
+    // Check if the function succeeded or failed
+    if ($qr_result['success']) {
+        // If it worked, get the URL of the uploaded QR code
+        $qr_code_link = $qr_result['url'];
+    } else {
+        // If it failed, stop everything and report the specific error message
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => $qr_result['error']]);
+        exit;
+    }
+
+    // --- Database Insertion ---
+
+    // --- Database Insertion ---
+// --- Database Insertion (Safe Version) ---
+$columns_str = implode(", ", array_map(function($col) { return "`$col`"; }, array_keys($valid_data)));
+$columns_str .= ", `govt_id_link`, `qr_code`, `organization_id`";
+
+$placeholders_str = implode(", ", array_fill(0, count($valid_data), '?'));
+$placeholders_str .= ", ?, ?, ?";
+
+// Types: all strings for form fields, govt_id_link (string), qr_code (string), organization_id (int)
+$types_str = str_repeat('s', count($valid_data)) . "ssi";
+
+$params = array_values($valid_data);
+$params[] = $govt_id_link;
+$params[] = $qr_code_link;
+$params[] = $organization_id;
+
+$sql = "INSERT INTO registered ($columns_str) VALUES ($placeholders_str)";
+
+// ---- Safety Checks ----
+
+// 1. Validate count
+if (strlen($types_str) !== count($params)) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'message' => "Param mismatch: types_str length (" . strlen($types_str) . 
+                     ") != params count (" . count($params) . ")",
+        'debug' => [
+            'sql' => $sql,
+            'types_str' => $types_str,
+            'params' => $params
+        ]
+    ]);
+    exit;
+}
+
+// 2. Prepare
+$stmt_insert = $conn->prepare($sql);
+if (!$stmt_insert) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Prepare failed: ' . $conn->error
+    ]);
+    exit;
+}
+
+// 3. Bind
+if (!$stmt_insert->bind_param($types_str, ...$params)) {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Bind failed: ' . $stmt_insert->error
+    ]);
+    exit;
+}
+
+
+
+    // 4. Execute
+    if ($stmt_insert->execute()) {
+        
+        // +++ START NEW AUTO-LOGIN LOGIC +++
+        // The user was created successfully, so log them in.
+        session_regenerate_id(true); // Secure the session
+        $_SESSION['attendee_logged_in'] = true;
+        $_SESSION['attendee_email'] = $valid_data['email'];
+        
+        // We can also store their name if it's available
+        if (isset($valid_data['name'])) {
+            $_SESSION['attendee_name'] = $valid_data['name'];
+        }
+        session_write_close(); // Save and close the session
+        // +++ END NEW AUTO-LOGIN LOGIC +++
+
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'success', 'message' => 'Registration successful!']);
+    } else {
+    header('Content-Type: application/json');
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Execute failed: ' . $stmt_insert->error
+    ]);
+}
+exit;
 }
 
 
@@ -128,7 +239,7 @@ ob_start();
     }
     .registration-form-container {
         max-width: 700px;
-        margin: 3rem auto;
+        margin: -1rem auto;
         padding: 2rem;
         background-color: #fff;
         border-radius: 0.5rem;
@@ -165,17 +276,48 @@ ob_start();
                     <?php foreach ($form_fields as $field): 
                         $field_name = htmlspecialchars($field['field']);
                         $label = htmlspecialchars($field['label']);
-                        // in registration.php
-            $input_type = ($field_name === 'email') ? 'email' : (($field_name === 'phone') ? 'tel' : (($field_name === 'govt_id_link') ? 'file' : 'text'));
                     ?>
                         <div class="col-12">
                             <label for="<?php echo $field_name; ?>" class="form-label"><?php echo $label; ?></label>
-                            <input type="<?php echo $input_type; ?>" class="form-control" id="<?php echo $field_name; ?>" name="<?php echo $field_name; ?>" required>
-                            <div class="invalid-feedback">
-                                Please provide a valid <?php echo strtolower($label); ?>.
-                            </div>
+
+                            <?php if ($field_name === 'gender'): // +++ START GENDER DROPDOWN +++ ?>
+                                
+                                <select class="form-select" id="gender" name="gender" required>
+                                    <option value="" selected disabled>Please select...</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select your gender.
+                                </div>
+                            
+                            <?php else: // +++ ALL OTHER FIELDS (OLD LOGIC) +++
+                                // Determine input type for other fields
+                                $input_type = ($field_name === 'email') ? 'email' : (($field_name === 'phone') ? 'tel' : (($field_name === 'govt_id_link') ? 'file' : 'text'));
+                            ?>
+                                <input type="<?php echo $input_type; ?>" class="form-control" id="<?php echo $field_name; ?>" name="<?php echo $field_name; ?>" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid <?php echo strtolower($label); ?>.
+                                </div>
+                            <?php endif; // +++ END GENDER DROPDOWN +++ ?>
+                            
                         </div>
                     <?php endforeach; ?>
+                      <div class="col-md-6">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="invalid-feedback">
+                            Password is required.
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="confirm_password" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        <div class="invalid-feedback">
+                            Passwords do not match.
+                        </div>
+                    </div>
                 </div>
                 <hr class="my-4">
                 <button class="w-100 btn btn-submit" type="submit">
