@@ -23,15 +23,14 @@ if (isset($_SESSION['admin_user_id']) && isset($conn)) {
     </div>
 </footer>
 
+<!-- jQuery must be loaded before DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <!-- Bootstrap JS Bundle with Popper -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <!-- SweetAlert2 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <!-- DataTables JS -->
-<script src="https://cdn.datatables.net/2.0.8/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/v/bs5/dt-2.0.8/datatables.min.js"></script>
 
 <!-- showSweetAlert function moved here for reusability -->
 <script>
@@ -47,16 +46,14 @@ if (isset($_SESSION['admin_user_id']) && isset($conn)) {
             title: type === 'success' ? 'Success!' : 'Error!',
             text: message,
             showConfirmButton: false,
-            timer: 2000,
+            timer: 3000,
             timerProgressBar: true,
-            didClose: () => {
-                if (reload) {
-                    window.location.reload();
-                }
+            toast: true,
+            position: 'top-end'
+        }).then(() => {
+            if (reload) {
+                window.location.reload();
             }
         });
     }
 </script>
-
-</body>
-</html>

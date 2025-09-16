@@ -43,7 +43,9 @@ function uploadToS3($s3Client, $bucketName, $file, $title, $s3FolderName) {
     }
 
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $newFileName = str_replace(' ', '-', strtolower($title)) . '.' . $ext;
+    $timestamp = date('YmdHis') . '_' . uniqid();
+    $sanitizedTitle = str_replace(' ', '-', strtolower($title));
+    $newFileName = $timestamp . '_' . $sanitizedTitle . '.' . $ext;
 
     try {
         $key = 'travel-agency-panel/' . $title . '/' . $s3FolderName . '/' . $newFileName;
