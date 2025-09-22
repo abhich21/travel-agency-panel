@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password']; // Default password '123456' as per requirement
 
     // Prepare and execute the query to find the promoter
-    $stmt = $conn->prepare("SELECT user_id, organization_id, username, password FROM promoters WHERE username = ?");
+    $stmt = $conn->prepare("SELECT promoter_id, organization_id, username, password FROM promoters WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Since the password is a fixed value, we can check it directly
         if ($password === $promoter['password']) {
             $_SESSION['promoterLoggedIn'] = TRUE;
-            $_SESSION['promoter_user_id'] = $promoter['user_id'];
+            $_SESSION['promoter_user_id'] = $promoter['promoter_id'];
             $_SESSION['organization_id'] = $promoter['organization_id'];
             $_SESSION['promoter_username'] = $promoter['username'];
 
