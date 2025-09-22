@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'];
 
     // Prepare a statement to prevent SQL injection
-    $stmt = $conn->prepare("SELECT u.id, u.user_name, u.password, u.role, o.bg_color, o.text_color FROM users u LEFT JOIN organizations o ON u.id = o.user_id WHERE u.user_name = ?");
+    $stmt = $conn->prepare("SELECT u.id, u.user_name, u.password, u.role,o.id AS organization_id, o.bg_color, o.text_color FROM users u LEFT JOIN organizations o ON u.id = o.user_id WHERE u.user_name = ?");
     $stmt->bind_param("s", $user_name);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Login successful
             $_SESSION['admin_user_id'] = $user['id'];
             $_SESSION['adminLoggedIn'] = TRUE;
+            $_SESSION['organization_id'] = $user['organization_id'];
             header('Location: index.php');
             exit;
         }
