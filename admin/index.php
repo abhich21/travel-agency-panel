@@ -70,6 +70,9 @@ if (isset($_SESSION['admin_user_id'])) {
 <a href="manage_agenda.php" class="btn btn-warning">
     <i class="fas fa-calendar-alt me-2"></i>Manage Agenda
 </a>
+<a href="manage_faq.php" class="btn btn-secondary">
+    <i class="fas fa-question-circle me-2"></i>Manage FAQs
+</a>
 
                 </div>
             </div>
