@@ -67,6 +67,7 @@ ob_start();
 
 <!-- Page-specific styles and HTML for the QR Code Page -->
 <style>
+    
     .qr-code-header {
         padding: -4rem 1rem;
         text-align: center;
@@ -94,7 +95,7 @@ ob_start();
 
 <main>
     <div class="qr-code-header">
-        <h1>Your Event QR Code</h1>
+        <h1 style="margin-top: 1rem;">Your Event QR Code</h1>
         <p class="lead">Welcome, <?php echo $user_name; ?>!</p>
     </div>
 

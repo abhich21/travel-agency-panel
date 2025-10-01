@@ -231,24 +231,129 @@ ob_start();
 
 <!-- Page-specific styles and HTML for the Registration Page -->
 <style>
-    .registration-header {
-        padding: 4rem 1.5rem;
-        text-align: center;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
+
+    .hero-background-video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Sits behind content */
+    overflow: hidden; /* Hides any part of the video spilling out */
+    background-attachment: fixed !important; /* This keeps the image still (parallax) */
+}
+
+.hero-background-video video {
+    /* This combo acts like 'background-size: cover' for a video */
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* This keeps your scroll-blur effect */
+    transition: filter 0.2s ease-out;
+}
+
+.hero-overlay {
+    /* This is the transparent black gradient */
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+    z-index: 2; /* Sits on top of the video */
+}
+
+
+  .hero-section {
+    /* This is now just a container */
+    position: relative;
+    overflow: hidden; /* This contains the blurred edges of the image */
+}
+
+    /* -- Define animation for fade-in effect -- */
+    @keyframes fadeInSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(15px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
+
+    .hero-content {
+    position: relative;
+    z-index: 3; /* This puts your text on top of the overlay */
+    color: white;
+    text-align: center;
+    padding: 5rem 1.5rem; /* This gives the hero section its size */
+
+    /* You can add your fixed height rules here if you want */
+    height: 30vh; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+     overflow: hidden;
+}
+
     .registration-form-container {
         max-width: 700px;
-        margin: -1rem auto;
-        padding: 2rem;
+        margin: 2rem auto 3rem auto; /* Pulls it up, adds bottom margin */
+        padding: 1.5rem 1rem; /* Increased padding */
         background-color: #fff;
         border-radius: 0.5rem;
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+
+        /* -- EFFECT 1: Add fade-in animation to the whole form -- */
+        animation: fadeInSlideUp 0.6s ease-out;
     }
-    .form-control:focus {
+
+    .form-label {
+        /* -- EFFECT 2: Modernize labels -- */
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #495057;
+    }
+
+    .form-control, .form-select {
+        /* -- EFFECT 3: Flatter, bottom-border inputs -- */
+        border: none;
+        border-radius: 0; /* Remove radius for a flat look */
+        border-bottom: 2px solid #dee2e6;
+        padding-left: 2px; /* Align with label text */
+        
+        /* -- EFFECT 4: Smooth transition for focus -- */
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        /* -- EFFECT 4 (Cont.): New focus style -- */
+        border-color: <?php echo $nav_bg_color; ?>; /* Uses your theme color */
+        box-shadow: none; /* Removes the default Bootstrap glow */
+        background-color: <?php echo $nav_bg_color . '1A'; ?>; /* Faint theme background */
+    }
+
+    /* -- EXCEPTION: File inputs look bad with bottom-border-only. -- */
+    /* -- This resets the file input to look normal. -- */
+    .form-control[type="file"] {
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        padding-left: 0.75rem;
+    }
+    .form-control[type="file"]:focus {
         border-color: <?php echo $nav_bg_color; ?>;
-        box-shadow: 0 0 0 0.25rem <?php echo $nav_bg_color . '40'; ?>; /* 40 adds transparency */
+        box-shadow: 0 0 0 0.25rem <?php echo $nav_bg_color . '40'; ?>;
+        background-color: #fff;
     }
+
+
     .btn-submit {
         background-color: <?php echo $nav_bg_color; ?>;
         color: <?php echo $nav_text_color; ?>;
@@ -256,17 +361,50 @@ ob_start();
         padding: 0.75rem 1.5rem;
         font-size: 1.1rem;
         font-weight: 500;
+        
+        /* -- EFFECT 5: Add transition for hover effect -- */
+        transition: all 0.3s ease;
     }
+
     .btn-submit:hover {
-        opacity: 0.9;
+        /* -- EFFECT 6: Modern hover effect (lift and shadow) -- */
+        opacity: 1; /* Override original 0.9 */
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
+    
+    /* -- EFFECT 7: Staggered animation for form fields -- */
+    #registrationForm .row > div {
+        animation: fadeInSlideUp 0.5s ease-out forwards;
+        opacity: 0; /* Start hidden */
+    }
+
+    /* -- Apply animation delays to each field -- */
+    <?php
+    $max_fields = 12; // Animate up to 12 fields
+    for ($i = 1; $i <= $max_fields; $i++) {
+        $delay = $i * 0.07;
+        echo "#registrationForm .row > div:nth-child($i) { animation-delay: {$delay}s; }\n";
+    }
+    ?>
 </style>
 
 <main>
-    <div class="registration-header">
-        <h1>Event Registration</h1>
-        <p class="lead">Complete the form below to secure your spot for <?php echo $org_title; ?>.</p>
+    <div class="hero-section">
+
+       <div class="hero-background-video">
+        <div class="hero-overlay"></div>
+        <video autoplay muted loop playsinline>
+            <source src="../assets/registerr - Trim.mp4">
+        </video>
+     </div>
+
+     <div class="hero-content">
+        <h1>Register yourself for the event.</h1>
+        
     </div>
+
+</div>
 
     <div class="registration-form-container">
         <?php if (!empty($form_fields)): ?>
@@ -324,28 +462,34 @@ ob_start();
                     <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
                     Register Now
                 </button>
+                  <div class="text-center mt-3">
+                    <p class="mb-0">
+                        Already registered? 
+                        <a href="login.php?view=<?php echo urlencode($org_title); ?>" class="login-link">Log In</a>
+                    </p>
+                </div>
             </form>
         <?php else: ?>
             <div class="alert alert-warning text-center">
                 Registration is not currently open for this event. Please check back later.
             </div>
         <?php endif; ?>
-    </div>
-       <div id="successCard" class="registration-form-container text-center d-none">
-        <div class="card-body">
-            <div class="mb-4">
-                <i class="fas fa-check-circle fa-4x text-success"></i>
             </div>
-            <h2 class="card-title">Thank You!</h2>
-            <p class="lead">Your registration was successful.</p>
-            <p>You can now access your event details, including your personal QR code and ticket information, from the navigation menu.</p>
-            <hr class="my-4">
-            <a href="my_qr_code.php?view=<?php echo urlencode($org_title); ?>" class="btn btn-submit">
-                View My QR Code
-            </a>
+            <div id="successCard" class="registration-form-container text-center d-none">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="fas fa-check-circle fa-4x text-success"></i>
+                    </div>
+                    <h2 class="card-title">Thank You!</h2>
+                    <p class="lead">Your registration was successful.</p>
+                    <p>You can now access your event details, including your personal QR code and ticket information, from the navigation menu.</p>
+                    <hr class="my-4">
+                    <a href="my_qr_code.php?view=<?php echo urlencode($org_title); ?>" class="btn btn-submit">
+                        View My QR Code
+                    </a>
+                </div>
         </div>
-    </div>
-</main>
+        </main>
 
 <script>
 // --- JAVASCRIPT FOR FORM VALIDATION AND AJAX SUBMISSION ---
@@ -415,6 +559,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+const bgVideo = document.querySelector('.hero-background-video video');
+    
+    if (bgVideo) {
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY;
+
+            // --- 1. Calculate Parallax ---
+            // This moves the video vertically at 50% of the scroll speed.
+            // This creates the "parallax" effect.
+            const parallaxOffset = scrollPos * 0.9;
+
+            // --- 2. Calculate Blur ---
+            let blurAmount = (scrollPos / 300) * 8; 
+            if (blurAmount > 8) {
+                blurAmount = 8;
+            }
+            
+            // --- 3. Apply Both Styles ---
+            // We combine the original centering transform with our new parallax 'translateY'
+            // and apply the blur filter.
+            bgVideo.style.transform = `translate(-50%, -50%) translateY(${parallaxOffset}px)`;
+            bgVideo.style.filter = `blur(${blurAmount}px)`;
+        });
+    }
+
+
 </script>
 
 <?php

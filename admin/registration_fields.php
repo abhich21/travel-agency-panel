@@ -151,13 +151,24 @@ $selected_fields_columns = array_column($existing_fields_data, 'field');
                                 <div class="row">
                                     <?php foreach ($registered_fields as $field): ?>
                                         <div class="col-sm-6 col-lg-4 mb-2">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="selected_fields[]" value="<?php echo htmlspecialchars($field['column']); ?>" id="field-<?php echo htmlspecialchars($field['column']); ?>"
-                                                    <?php echo in_array($field['column'], $selected_fields_columns) ? 'checked' : ''; ?>>
-                                                <label class="form-check-label" for="field-<?php echo htmlspecialchars($field['column']); ?>">
-                                                    <?php echo htmlspecialchars($field['label']); ?>
-                                                </label>
-                                            </div>
+                                           <div class="form-check">
+    <?php if ($field['column'] === 'email'): ?>
+    
+    <input class="form-check-input" type="checkbox" name="selected_fields[]" value="email" id="field-email" checked disabled>
+    <label class="form-check-label" for="field-email">
+        <?php echo htmlspecialchars($field['label']); ?> <small class="text-muted">(Required)</small>
+    </label>
+    <input type="hidden" name="selected_fields[]" value="email">
+
+<?php else: ?>
+        <input class="form-check-input" type="checkbox" name="selected_fields[]" value="<?php echo htmlspecialchars($field['column']); ?>" id="field-<?php echo htmlspecialchars($field['column']); ?>"
+            <?php echo in_array($field['column'], $selected_fields_columns) ? 'checked' : ''; ?>>
+        <label class="form-check-label" for="field-<?php echo htmlspecialchars($field['column']); ?>">
+            <?php echo htmlspecialchars($field['label']); ?>
+        </label>
+
+    <?php endif; ?>
+</div>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>

@@ -53,6 +53,29 @@ if (isset($_SESSION['admin_user_id'])) {
 
             <div class="card mt-4">
                 <div class="card-header">
+                    <h4>Event Management</h4>
+                </div>
+                <div class="card-body">
+                    <p>Update the general event details for your organization.</p>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#eventDateModal">
+                        <i class="fas fa-calendar-alt me-2"></i>Set Event Date
+                    </button>
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#eventVenueModal">
+                        <i class="fas fa-map-marker-alt me-2"></i>Set Venue Location
+                    </button>
+                    <a href="edit_home.php" class="btn btn-info">
+    <i class="fas fa-pencil-alt me-2"></i>Edit Home Page Content
+</a>
+
+<a href="manage_agenda.php" class="btn btn-warning">
+    <i class="fas fa-calendar-alt me-2"></i>Manage Agenda
+</a>
+
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
                     <h4>Registered Users</h4>
                 </div>
                 <div class="card-body">
@@ -119,275 +142,336 @@ if (isset($_SESSION['admin_user_id'])) {
         </div>
     </div>
 
+    <div class="modal fade" id="eventDateModal" tabindex="-1" aria-labelledby="eventDateModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="eventDateForm">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="eventDateModalLabel">Set Event Date</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Select the official start date for the event.</p>
+                        <label for="event_date" class="form-label">Event Date</label>
+                        <input type="date" class="form-control" id="event_date" name="event_date" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Date</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="eventVenueModal" tabindex="-1" aria-labelledby="eventVenueModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="eventVenueForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventVenueModalLabel">Set Venue Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Enter the venue details manually.</p>
+                    <div class="mb-3">
+                        <label for="venue_name" class="form-label">Venue Name</label>
+                        <input type="text" class="form-control" id="venue_name" name="venue_name" placeholder="e.g., Hyatt Regency" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="venue_address" class="form-label">Full Venue Address</label>
+                        <textarea class="form-control" id="venue_address" name="venue_address" rows="3" placeholder="Enter the complete address" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="venue_url" class="form-label">Google Maps Link</label>
+                        <input type="url" class="form-control" id="venue_url" name="venue_url" placeholder="Paste the share link from Google Maps" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-success">Save Venue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
     <script>
-        $(document).ready(function() {
-            // Display a one-time success or error toast on page load
-            <?php
-            if (!empty($success)) {
-                echo "showSweetAlert('success', '" . addslashes($success) . "', false);";
-            }
-            if (!empty($error)) {
-                echo "showSweetAlert('error', '" . addslashes($error) . "', false);";
-            }
-            ?>
+    $(document).ready(function() {
+        // --- ORIGINAL USER MANAGEMENT CODE ---
+        <?php
+        if (!empty($success)) {
+            echo "showSweetAlert('success', '" . addslashes($success) . "', false);";
+        }
+        if (!empty($error)) {
+            echo "showSweetAlert('error', '" . addslashes($error) . "', false);";
+        }
+        ?>
 
-            let usersTable;
-            let currentUniqueFields = {};
-            let isDataTableInitialized = false;
+        let usersTable;
+        let currentUniqueFields = {};
+        let isDataTableInitialized = false;
 
-            // Load data into the DataTable via AJAX
-            $.ajax({
-                url: 'api/get_users.php',
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    if (response.data && response.data.length > 0) {
-                        const firstRow = response.data[0];
-                        
-                        // Filter out govt_id_link from the dynamic fields array to prevent duplication
-                        const filteredFields = firstRow.fields.filter(field => field.name !== 'govt_id_link');
-
-                        // Dynamically create headers and columns based on the filtered 'fields' array
-                        const headers = filteredFields.map(field => field.name);
-                        const columns = filteredFields.map(field => ({
-                            // Use a function to correctly access the nested data
-                            data: function(row, type, set, meta) {
-                                const foundField = row.fields.find(f => f.name === field.name);
-                                return foundField ? foundField.value : '';
-                            },
-                            title: field.name.replace(/_/g, ' ').toUpperCase()
-                        }));
-
-                        // Add top-level fields like qr_code and govt_id_link as separate columns
-                        if (firstRow.qr_code) {
-                            headers.push('QR_Code');
-                            columns.push({
-                                data: 'qr_code',
-                                title: 'QR Code',
-                                render: function(data, type, row) {
-                                    return `<img src="${data}" alt="QR Code" style="width: 50px; height: 50px; cursor: pointer;" class="image-link" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="${data}">`;
-                                }
-                            });
-                        }
-                        
-                        if (firstRow.govt_id_link) {
-                            headers.push('Govt_ID');
-                            columns.push({
-                                data: 'govt_id_link',
-                                title: 'Govt ID',
-                                render: function(data, type, row) {
-                                    return `<img src="${data}" alt="Govt ID" style="width: 50px; height: 50px; cursor: pointer;" class="image-link" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="${data}">`;
-                                }
-                            });
-                        }
-
-                        // Add the 'Actions' column
-                        headers.push('Actions');
+        // Load data into the DataTable via AJAX
+        $.ajax({
+            url: 'api/get_users.php',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.data && response.data.length > 0) {
+                    const firstRow = response.data[0];
+                    const filteredFields = firstRow.fields.filter(field => field.name !== 'govt_id_link');
+                    const headers = filteredFields.map(field => field.name);
+                    const columns = filteredFields.map(field => ({
+                        data: function(row, type, set, meta) {
+                            const foundField = row.fields.find(f => f.name === field.name);
+                            return foundField ? foundField.value : '';
+                        },
+                        title: field.name.replace(/_/g, ' ').toUpperCase()
+                    }));
+                    if (firstRow.qr_code) {
+                        headers.push('QR_Code');
                         columns.push({
-                            data: null,
-                            title: 'Actions',
+                            data: 'qr_code',
+                            title: 'QR Code',
                             render: function(data, type, row) {
-                                return `
-                                    <button class="btn btn-sm btn-info edit-btn" data-id="${row.id}"><i class="fas fa-edit"></i> Edit</button>
-                                    <button class="btn btn-sm btn-danger delete-btn" data-id="${row.id}"><i class="fas fa-trash"></i> Delete</button>
-                                `;
+                                return `<img src="${data}" alt="QR Code" style="width: 50px; height: 50px; cursor: pointer;" class="image-link" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="${data}">`;
                             }
                         });
-
-                        // Set dynamic headers
-                        $('#usersTable thead tr').empty();
-                        headers.forEach(header => {
-                            $('#usersTable thead tr').append(`<th>${header.replace(/_/g, ' ').toUpperCase()}</th>`);
+                    }
+                    if (firstRow.govt_id_link) {
+                        headers.push('Govt_ID');
+                        columns.push({
+                            data: 'govt_id_link',
+                            title: 'Govt ID',
+                            render: function(data, type, row) {
+                                return `<img src="${data}" alt="Govt ID" style="width: 50px; height: 50px; cursor: pointer;" class="image-link" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="${data}">`;
+                            }
                         });
-                        
-                        // Destroy existing DataTable instance if it exists
-                        if ($.fn.DataTable.isDataTable('#usersTable')) {
-                            usersTable.destroy();
+                    }
+                    headers.push('Actions');
+                    columns.push({
+                        data: null,
+                        title: 'Actions',
+                        render: function(data, type, row) {
+                            return `
+                                <button class="btn btn-sm btn-info edit-btn" data-id="${row.id}"><i class="fas fa-edit"></i> Edit</button>
+                                <button class="btn btn-sm btn-danger delete-btn" data-id="${row.id}"><i class="fas fa-trash"></i> Delete</button>
+                            `;
                         }
-                        
-                        usersTable = $('#usersTable').DataTable({
-                            data: response.data,
-                            columns: columns,
-                            pageLength: 10,
-                            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
-                            responsive: true
-                        });
-                        isDataTableInitialized = true;
+                    });
+                    $('#usersTable thead tr').empty();
+                    headers.forEach(header => {
+                        $('#usersTable thead tr').append(`<th>${header.replace(/_/g, ' ').toUpperCase()}</th>`);
+                    });
+                    if ($.fn.DataTable.isDataTable('#usersTable')) {
+                        usersTable.destroy();
+                    }
+                    usersTable = $('#usersTable').DataTable({
+                        data: response.data,
+                        columns: columns,
+                        pageLength: 10,
+                        lengthMenu: [ [5, 10, 25, 50, -1], [5, 10, 25, 50, "All"] ],
+                        responsive: true
+                    });
+                    isDataTableInitialized = true;
+                } else {
+                    $('#usersTable').html('<p class="text-center mt-4">No data found.</p>');
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error("AJAX Error: ", textStatus, errorThrown);
+                $('#usersTable').html('<p class="text-center mt-4 text-danger">An error occurred while fetching data. Please try again later.</p>');
+            }
+        });
+        $('#usersTable').on('click', '.image-link', function() {
+            const imageUrl = $(this).data('image-url');
+            const altText = $(this).attr('alt');
+            $('#modalImage').attr('src', imageUrl);
+            $('#modalImage').attr('alt', altText);
+            $('#imageModalLabel').text(altText);
+            $('#imageModal').modal('show');
+        });
+        $('#usersTable').on('click', '.edit-btn', function() {
+            const userId = $(this).data('id');
+            const rowData = usersTable.row($(this).parents('tr')).data();
+            $.ajax({
+                url: 'api/get_registration_fields.php',
+                type: 'GET',
+                dataType: 'json',
+                success: function(fieldsResponse) {
+                    const fieldsContainer = $('#editFieldsContainer');
+                    fieldsContainer.empty();
+                    currentUniqueFields = {};
+                    $.each(rowData.fields, function(index, field) {
+                        if (field.name !== 'id' && field.name !== 'qr_code' && field.name !== 'govt_id_link') {
+                            const fieldDetails = fieldsResponse.data.find(f => f.field_name === field.name);
+                            if (fieldDetails && fieldDetails.is_unique === 1) {
+                                currentUniqueFields[field.name] = field.value;
+                            }
+                            fieldsContainer.append(`
+                                <div class="mb-3">
+                                    <label for="edit-${field.name}" class="form-label text-capitalize">${field.name.replace(/_/g, ' ')}</label>
+                                    <input type="text" class="form-control" id="edit-${field.name}" name="${field.name}" value="${field.value}">
+                                </div>
+                            `);
+                        }
+                    });
+                    $('#editUserId').val(userId);
+                    const hasGovtId = fieldsResponse.data.some(field => field.field_name === 'govt_id_link');
+                    if (hasGovtId && rowData.govt_id_link) {
+                        $('#currentGovtIdPreview').html(`
+                            <p>Current Government ID:</p>
+                            <img src="${rowData.govt_id_link}" alt="Current Govt ID" class="img-thumbnail" style="max-width: 200px;">
+                        `);
                     } else {
-                        // Display "No data found" if the response is empty
-                        $('#usersTable').html('<p class="text-center mt-4">No data found.</p>');
+                        $('#currentGovtIdPreview').empty();
+                    }
+                    $('#editUserModal').modal('show');
+                },
+                error: function() {
+                    showSweetAlert('error', 'Failed to fetch registration fields.');
+                }
+            });
+        });
+        $('#editUserForm').on('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Updating User...',
+                html: 'Please wait while the user data is being updated.',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            const formData = new FormData(this);
+            formData.append('uniqueFields', JSON.stringify(currentUniqueFields));
+            $.ajax({
+                url: 'api/edit_user.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    $('#editUserModal').modal('hide');
+                    if (response.success) {
+                        showSweetAlert('success', response.message, true);
+                    } else {
+                        showSweetAlert('error', response.message);
                     }
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
+                    Swal.close();
+                    Swal.fire('Error!', 'An error occurred. Please try again.', 'error');
                     console.error("AJAX Error: ", textStatus, errorThrown);
-                    $('#usersTable').html('<p class="text-center mt-4 text-danger">An error occurred while fetching data. Please try again later.</p>');
                 }
             });
-            
-            // Handle image click to show modal
-            $('#usersTable').on('click', '.image-link', function() {
-                const imageUrl = $(this).data('image-url');
-                const altText = $(this).attr('alt');
-                $('#modalImage').attr('src', imageUrl);
-                $('#modalImage').attr('alt', altText);
-                $('#imageModalLabel').text(altText);
-                $('#imageModal').modal('show');
-            });
-
-
-            // Handle Edit button click
-            $('#usersTable').on('click', '.edit-btn', function() {
-                const userId = $(this).data('id');
-                const rowData = usersTable.row($(this).parents('tr')).data();
-                
-                // Get registration fields to check for govt_id
-                $.ajax({
-                    url: 'api/get_registration_fields.php',
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(fieldsResponse) {
-                        const fieldsContainer = $('#editFieldsContainer');
-                        fieldsContainer.empty();
-                        
-                        currentUniqueFields = {};
-
-                        // Populate modal with user data and check for unique fields
-                        $.each(rowData.fields, function(index, field) {
-                            if (field.name !== 'id' && field.name !== 'qr_code' && field.name !== 'govt_id_link') {
-                                const fieldDetails = fieldsResponse.data.find(f => f.field_name === field.name);
-                                if (fieldDetails && fieldDetails.is_unique === 1) {
-                                    currentUniqueFields[field.name] = field.value;
-                                }
-                                fieldsContainer.append(`
-                                    <div class="mb-3">
-                                        <label for="edit-${field.name}" class="form-label text-capitalize">${field.name.replace(/_/g, ' ')}</label>
-                                        <input type="text" class="form-control" id="edit-${field.name}" name="${field.name}" value="${field.value}">
-                                    </div>
-                                `);
-                            }
-                        });
-                        
-                        // Add hidden input for user ID
-                        $('#editUserId').val(userId);
-                        
-                        // Check if govt_id_link exists in registration fields
-                        const hasGovtId = fieldsResponse.data.some(field => field.field_name === 'govt_id_link');
-                        if (hasGovtId && rowData.govt_id_link) {
-                            $('#currentGovtIdPreview').html(`
-                                <p>Current Government ID:</p>
-                                <img src="${rowData.govt_id_link}" alt="Current Govt ID" class="img-thumbnail" style="max-width: 200px;">
-                            `);
-                        } else {
-                            $('#currentGovtIdPreview').empty();
+        });
+        $('#usersTable').on('click', '.delete-btn', function() {
+            const userId = $(this).data('id');
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Deleting User...',
+                        html: 'Please wait...',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
                         }
-
-                        $('#editUserModal').modal('show');
-                    },
-                    error: function() {
-                        showSweetAlert('error', 'Failed to fetch registration fields.');
-                    }
-                });
-            });
-
-            // Handle Edit Form Submission
-            $('#editUserForm').on('submit', function(e) {
-                e.preventDefault();
-
-                // Show loader
-                Swal.fire({
-                    title: 'Updating User...',
-                    html: 'Please wait while the user data is being updated.',
-                    allowOutsideClick: false,
-                    showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-                
-                const formData = new FormData(this);
-                formData.append('uniqueFields', JSON.stringify(currentUniqueFields));
-
-                $.ajax({
-                    url: 'api/edit_user.php',
-                    type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    dataType: 'json',
-                    success: function(response) {
-                         $('#editUserModal').modal('hide');
-                        if (response.success) {
-                            // Reload the page on success
-                            showSweetAlert('success', response.message, true);
-                        } else {
-                            showSweetAlert('error', response.message);
+                    });
+                    $.ajax({
+                        url: 'api/delete_user.php',
+                        type: 'POST',
+                        data: {
+                            user_id: userId
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            Swal.close();
+                            if (response.success) {
+                                showSweetAlert('success', response.message, true);
+                            } else {
+                                showSweetAlert('error', response.message);
+                            }
+                        },
+                        error: function(jqXHR, textStatus, errorThrown) {
+                            Swal.close();
+                            Swal.fire('Error!', 'An error occurred. Please try again.', 'error');
+                            console.error("AJAX Error: ", textStatus, errorThrown);
                         }
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        Swal.close();
-                        Swal.fire(
-                            'Error!',
-                            'An error occurred. Please try again.',
-                            'error'
-                        );
-                        console.error("AJAX Error: ", textStatus, errorThrown);
-                    }
-                });
-            });
-
-            // Handle Delete button click
-            $('#usersTable').on('click', '.delete-btn', function() {
-                const userId = $(this).data('id');
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: "You won't be able to revert this!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Yes, delete it!'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        // Show loader for deletion
-                        Swal.fire({
-                            title: 'Deleting User...',
-                            html: 'Please wait...',
-                            allowOutsideClick: false,
-                            showConfirmButton: false,
-                            didOpen: () => {
-                                Swal.showLoading();
-                            }
-                        });
-
-                        $.ajax({
-                            url: 'api/delete_user.php',
-                            type: 'POST',
-                            data: { user_id: userId },
-                            dataType: 'json',
-                            success: function(response) {
-                                Swal.close();
-                                if (response.success) {
-                                    // Reload the page on success
-                                    showSweetAlert('success', response.message, true);
-                                } else {
-                                    showSweetAlert('error', response.message);
-                                }
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                Swal.close();
-                                Swal.fire(
-                                    'Error!',
-                                    'An error occurred. Please try again.',
-                                    'error'
-                                );
-                                console.error("AJAX Error: ", textStatus, errorThrown);
-                            }
-                        });
-                    }
-                });
+                    });
+                }
             });
         });
-    </script>
+
+        // --- NEW EVENT MANAGEMENT CODE ---
+
+        // Handle Event Date Form Submission
+        $('#eventDateForm').on('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            $.ajax({
+                url: 'api/update_event_details.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    $('#eventDateModal').modal('hide');
+                    if (response.success) {
+                        showSweetAlert('success', response.message, true);
+                    } else {
+                        showSweetAlert('error', response.message);
+                    }
+                },
+                error: function() {
+                    showSweetAlert('error', 'An error occurred. Please try again.');
+                }
+            });
+        });
+
+        // Handle Event Venue Form Submission
+        $('#eventVenueForm').on('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            $.ajax({
+                url: 'api/update_event_details.php',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(response) {
+                    $('#eventVenueModal').modal('hide');
+                    if (response.success) {
+                        showSweetAlert('success', response.message, true);
+                    } else {
+                        showSweetAlert('error', response.message);
+                    }
+                },
+                error: function() {
+                    showSweetAlert('error', 'An error occurred. Please try again.');
+                }
+            });
+        });
+    }); // This is the closing of the main $(document).ready function
+</script>
+    
+
+   
 </body>
 </html>

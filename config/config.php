@@ -1,4 +1,6 @@
 <?php
+// Add this line at the top of your config.php file
+define('BASE_URL', '/travel-agency-panel');
 //Note: This file should be included first in every php page.
 error_reporting(E_ALL);
 ini_set('display_errors', 'On');

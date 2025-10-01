@@ -33,12 +33,63 @@ ob_start();
 ?>
 
 <style>
-    .funzone-header {
-        padding: 4rem 1.5rem;
-        text-align: center;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-    }
+
+    .hero-background-video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Sits behind content */
+    overflow: hidden; /* Hides any part of the video spilling out */
+    background-attachment: fixed !important; /* This keeps the image still (parallax) */
+}
+
+.hero-background-video video {
+    /* This combo acts like 'background-size: cover' for a video */
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* This keeps your scroll-blur effect */
+    transition: filter 0.2s ease-out;
+}
+
+.hero-overlay {
+    /* This is the transparent black gradient */
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+    z-index: 2; /* Sits on top of the video */
+}
+
+
+  .hero-section {
+    /* This is now just a container */
+    position: relative;
+    overflow: hidden; /* This contains the blurred edges of the image */
+}
+
+   .hero-content {
+    position: relative;
+    z-index: 3; /* This puts your text on top of the overlay */
+    color: white;
+    text-align: center;
+    padding: 5rem 1.5rem; /* This gives the hero section its size */
+
+    /* You can add your fixed height rules here if you want */
+    height: 30vh; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+     overflow: hidden;
+}
     .funzone-container {
         max-width: 1100px;
         margin: 3rem auto;
@@ -78,10 +129,21 @@ ob_start();
 </style>
 
 <main>
-    <div class="funzone-header">
+    <div class="hero-section">
+
+       <div class="hero-background-video">
+        <div class="hero-overlay"></div>
+        <video autoplay muted loop playsinline>
+            <source src="../assets/funzone5.mp4">
+        </video>
+     </div>
+
+     <div class="hero-content">
         <h1>Fun Zone</h1>
-        <p class="lead">Engage, play, and win!</p>
+      
     </div>
+
+</div>
 
     <div class="container funzone-container">
         <div class="row g-4">
@@ -116,7 +178,32 @@ ob_start();
         </div>
     </div>
 </main>
+<script>
+    const bgVideo = document.querySelector('.hero-background-video video');
+    
+    if (bgVideo) {
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY;
 
+            // --- 1. Calculate Parallax ---
+            // This moves the video vertically at 50% of the scroll speed.
+            // This creates the "parallax" effect.
+            const parallaxOffset = scrollPos * 0.9;
+
+            // --- 2. Calculate Blur ---
+            let blurAmount = (scrollPos / 300) * 8; 
+            if (blurAmount > 8) {
+                blurAmount = 8;
+            }
+            
+            // --- 3. Apply Both Styles ---
+            // We combine the original centering transform with our new parallax 'translateY'
+            // and apply the blur filter.
+            bgVideo.style.transform = `translate(-50%, -50%) translateY(${parallaxOffset}px)`;
+            bgVideo.style.filter = `blur(${blurAmount}px)`;
+        });
+    }
+</script>
 <?php
 // --- 4. Store the captured HTML ---
 $page_content_html = ob_get_clean();

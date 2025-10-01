@@ -73,12 +73,13 @@ $is_logged_in = (isset($_SESSION['attendee_logged_in']) && $_SESSION['attendee_l
             font-weight: 500;
             padding: 0.5rem 1rem !important;
             border-radius: 0.375rem;
-            transition: background-color 0.2s ease-in-out;
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
             margin: 0 0.25rem;
         }
         .navbar-top .nav-link.active,
         .navbar-top .nav-link:hover {
             background-color: rgba(255, 255, 255, 0.15); /* Subtle highlight */
+             transform: translateY(-2px); /* This adds the "lift" effect */
         }
         
         /* --- MOBILE: BOTTOM NAVBAR --- */
@@ -104,16 +105,18 @@ $is_logged_in = (isset($_SESSION['attendee_logged_in']) && $_SESSION['attendee_l
             font-size: 0.75rem;
             padding: 0.5rem 0.25rem;
             text-align: center;
+            transition: transform 0.2s ease-in-out; /* +++ ADD THIS LINE +++ */
         }
         .navbar-bottom .nav-link i {
             font-size: 1.25rem;
             margin-bottom: 0.25rem;
         }
-        .navbar-bottom .nav-link.active {
+        /* +++ ADD THIS NEW RULE +++ */
+        .navbar-bottom .nav-link:hover,
+        .navbar-bottom .nav-link:active {
             transform: scale(1.1);
             border-radius: 8px;
         }
-
         /* Offcanvas Menu for "More" */
         .offcanvas-body .list-group-item {
             background-color: transparent;
@@ -145,12 +148,14 @@ $is_logged_in = (isset($_SESSION['attendee_logged_in']) && $_SESSION['attendee_l
             <ul class="navbar-nav ms-auto">
                 <?php
                 // Helper function to generate nav items
-                function nav_item($page, $title, $icon, $current_page, $color, $org_title, $id = '', $is_hidden = false) {
+                // The updated nav_item function
+function nav_item($page, $title, $icon, $current_page, $color, $org_title, $id = '', $is_hidden = false)  {
                     $active_class = ($current_page == $page) ? 'active' : '';
                     $hidden_class = $is_hidden ? 'd-none' : ''; // Bootstrap class to hide element
                     echo "<li id='$id' class='nav-item $hidden_class'>";
-                    echo "<a class='nav-link $active_class' style='color: $color;' href='$page?view=" . urlencode($org_title) . "'><i class='$icon me-2'></i>$title</a>";
-                    echo "</li>";
+// Prepend the BASE_URL and the /users/ path to the page name
+    $url = BASE_URL . '/users/' . $page;
+    echo "<a class='nav-link $active_class' style='color: $color;' href='$url?view=" . urlencode($org_title) . "'><i class='$icon me-2'></i>$title</a>";                    echo "</li>";
                 }
 
  // --- PUBLIC LINKS (Always Show) ---
@@ -179,7 +184,7 @@ $is_logged_in = (isset($_SESSION['attendee_logged_in']) && $_SESSION['attendee_l
                         <li><a class="dropdown-item" href="leaderboard.php?view=<?php echo urlencode($org_title); ?>"><i class="fas fa-trophy me-2"></i>Leaderboard</a></li>
                         <li><a class="dropdown-item" href="gallery.php?view=<?php echo urlencode($org_title); ?>"><i class="fas fa-images me-2"></i>Gallery</a></li>
                         <li><a class="dropdown-item" href="notifications.php?view=<?php echo urlencode($org_title); ?>"><i class="fas fa-bell me-2"></i>Notifications</a></li>
-                        <li><a class="dropdown-item" href="helpdesk.php?view=<?php echo urlencode($org_title); ?>"><i class="fas fa-headset me-2"></i>Helpdesk</a></li>
+                        <li><a class="dropdown-item" href="./chatbot/helpdesk.php?view=<?php echo urlencode($org_title); ?>"><i class="fas fa-headset me-2"></i>Helpdesk</a></li>
                     </ul>
                 </li>
             </ul>
@@ -194,7 +199,8 @@ $is_logged_in = (isset($_SESSION['attendee_logged_in']) && $_SESSION['attendee_l
         function mobile_nav_item($page, $title, $icon, $current_page, $color, $org_title, $id = '', $is_hidden = false) {
             $active_class = ($current_page == $page) ? 'active' : '';
             $hidden_class = $is_hidden ? 'd-none' : '';
-            echo "<li id='$id' class='nav-item $hidden_class'><a class='nav-link $active_class' style='color: $color;' href='$page?view=" . urlencode($org_title) . "'><i class='$icon'></i><span>$title</span></a></li>";
+           $url = BASE_URL . '/users/' . $page;
+    echo "<a class='nav-link $active_class' style='color: $color;' href='$url?view=" . urlencode($org_title) . "'><i class='$icon me-2'></i>$title</a>";
         }
         
         mobile_nav_item('home.php', 'Home', 'fas fa-home', $current_page, $nav_text_color, $org_title);
@@ -218,27 +224,33 @@ mobile_nav_item('my_account.php', 'Account', 'fas fa-user-circle', $current_page
     <div class="offcanvas-body">
         <div class="list-group">
             <?php
-            function offcanvas_item($page, $title, $icon, $color, $org_title, $id = '', $is_hidden = false) {
-                $hidden_class = $is_hidden ? 'd-none' : '';
-                echo "<a id='$id' href='$page?view=" . urlencode($org_title) . "' class='list-group-item list-group-item-action $hidden_class' style='color: $color;'><i class='$icon me-3'></i>$title</a>";
-            }
+            function offcanvas_item($page, $title, $icon, $current_page, $color, $org_title, $id = '', $is_hidden = false) {
+    // This is the missing line that defines the active class
+    $active_class = ($current_page == $page) ? 'active' : '';
+    
+    $hidden_class = $is_hidden ? 'd-none' : '';
+    $url = BASE_URL . '/users/' . $page;
+
+    // Corrected the link to use list-group-item classes, consistent with an offcanvas menu
+    echo "<a id='$id' href='$url?view=" . urlencode($org_title) . "' class='list-group-item list-group-item-action $hidden_class $active_class' style='color: $color;'><i class='$icon me-3'></i>$title</a>";
+}
 
            if ($is_logged_in):
     // Show "My Ticket" if logged IN
-offcanvas_item('my_account.php', 'My Account', 'fas fa-user-circle', $nav_text_color, $org_title);else:
+offcanvas_item('my_account.php', 'My Account', 'fas fa-user-circle',$current_page, $nav_text_color, $org_title);else:
     // Show "Registration" and "Login" if LOGGED OUT
-    offcanvas_item('registration.php', 'Registration', 'fas fa-user-plus', $nav_text_color, $org_title);
-    offcanvas_item('login.php', 'Login', 'fas fa-sign-in-alt', $nav_text_color, $org_title);
-endif;            offcanvas_item('venue.php', 'Venue Details', 'fas fa-map-marker-alt', $nav_text_color, $org_title);
-            offcanvas_item('faq.php', 'FAQs', 'fas fa-question-circle', $nav_text_color, $org_title);
-            offcanvas_item('fun_zone.php', 'Fun Zone', 'fas fa-gamepad', $nav_text_color, $org_title);
-            offcanvas_item('leaderboard.php', 'Leaderboard', 'fas fa-trophy', $nav_text_color, $org_title);
-            offcanvas_item('notifications.php', 'Notifications', 'fas fa-bell', $nav_text_color, $org_title);
-            offcanvas_item('helpdesk.php', 'Helpdesk', 'fas fa-headset', $nav_text_color, $org_title);
+    offcanvas_item('registration.php', 'Registration', 'fas fa-user-plus',$current_page, $nav_text_color, $org_title);
+    offcanvas_item('login.php', 'Login', 'fas fa-sign-in-alt',$current_page, $nav_text_color, $org_title);
+endif;            offcanvas_item('venue.php', 'Venue Details', 'fas fa-map-marker-alt',$current_page, $nav_text_color, $org_title);
+            offcanvas_item('faq.php', 'FAQs', 'fas fa-question-circle', $current_page,$nav_text_color, $org_title);
+            offcanvas_item('fun_zone.php', 'Fun Zone', 'fas fa-gamepad', $current_page,$nav_text_color, $org_title);
+            offcanvas_item('leaderboard.php', 'Leaderboard', 'fas fa-trophy',$current_page, $nav_text_color, $org_title);
+            offcanvas_item('notifications.php', 'Notifications', 'fas fa-bell',$current_page, $nav_text_color, $org_title);
+            offcanvas_item('chatbot/helpdesk.php', 'Helpdesk', 'fas fa-headset',$current_page, $nav_text_color, $org_title);
             // +++ ADD THIS NEW LOGOUT BLOCK +++
         if ($is_logged_in): ?>
             <hr style="border-color: <?php echo $nav_text_color . '40'; ?>;">
-            <?php offcanvas_item('logout.php', 'Logout', 'fas fa-sign-out-alt', $nav_text_color, $org_title); ?>
+            <?php offcanvas_item('logout.php', 'Logout', 'fas fa-sign-out-alt',$current_page, $nav_text_color, $org_title); ?>
         <?php endif; ?>
             
         </div>

@@ -35,20 +35,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
             <span class="navbar-toggler-icon" style="background-image: url('data:image/svg+xml;charset=utf8,%3Csvg viewBox=\'0 0 30 30\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath stroke=\'<?php echo rawurlencode($nav_text_color); ?>\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-miterlimit=\'10\' d=\'M4 7h22M4 15h22M4 23h22\'/%3E%3C/svg%3E');"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'index.php') ? 'active fw-bold' : ''; ?>" aria-current="page" href="index.php" style="color: <?php echo $nav_text_color; ?>;">Dashboard</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'users.php') ? 'active fw-bold' : ''; ?>" href="users.php" style="color: <?php echo $nav_text_color; ?>;">Users</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'registration_fields.php') ? 'active fw-bold' : ''; ?>" href="registration_fields.php" style="color: <?php echo $nav_text_color; ?>;">Registration</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php echo ($current_page == 'logout.php') ? 'active fw-bold' : ''; ?>" href="logout.php" style="color: <?php echo $nav_text_color; ?>;">Logout</a>
-                </li>
-            </ul>
+<ul class="navbar-nav">
+    <li class="nav-item">
+        <a class="nav-link <?php echo ($current_page == 'index.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/admin/index.php" style="color: <?php echo $nav_text_color; ?>;">Dashboard</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?php echo ($current_page == 'users.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/admin/users.php" style="color: <?php echo $nav_text_color; ?>;">Users</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?php echo ($current_page == 'registration_fields.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/admin/registration_fields.php" style="color: <?php echo $nav_text_color; ?>;">Registration</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?php echo ($current_page == 'admin_chat.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/users/chatbot/admin_chat.php" style="color: <?php echo $nav_text_color; ?>;">Live Chat</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="<?php echo BASE_URL; ?>/admin/logout.php" style="color: <?php echo $nav_text_color; ?>;">Logout</a>
+    </li>
+</ul>
         </div>
     </div>
 </nav>

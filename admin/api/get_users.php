@@ -42,7 +42,7 @@ $select_fields = [];
 foreach ($fields_to_display as $field) {
     $select_fields[] = "`" . $field['field'] . "`";
 }
-// $select_fields[] = "`govt_id_link`";
+$select_fields[] = "`govt_id_link`";
 $select_fields[] = "`qr_code`";
 $select_fields[] = "`id`";
 

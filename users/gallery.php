@@ -45,12 +45,62 @@ ob_start();
 ?>
 
 <style>
-    .gallery-header {
-        padding: 4rem 1.5rem;
-        text-align: center;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-    }
+    .hero-background-video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Sits behind content */
+    overflow: hidden; /* Hides any part of the video spilling out */
+    background-attachment: fixed !important; /* This keeps the image still (parallax) */
+}
+
+.hero-background-video video {
+    /* This combo acts like 'background-size: cover' for a video */
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    /* This keeps your scroll-blur effect */
+    transition: filter 0.2s ease-out;
+}
+
+.hero-overlay {
+    /* This is the transparent black gradient */
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
+    z-index: 2; /* Sits on top of the video */
+}
+
+
+  .hero-section {
+    /* This is now just a container */
+    position: relative;
+    overflow: hidden; /* This contains the blurred edges of the image */
+}
+
+    .hero-content {
+    position: relative;
+    z-index: 3; /* This puts your text on top of the overlay */
+    color: white;
+    text-align: center;
+    padding: 5rem 1.5rem; /* This gives the hero section its size */
+
+    /* You can add your fixed height rules here if you want */
+    height: 30vh; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+     overflow: hidden;
+}
     .gallery-container {
         max-width: 1100px;
         margin: 3rem auto;
@@ -83,31 +133,113 @@ ob_start();
         color: <?php echo $nav_text_color; ?>;
         opacity: 0.9;
     }
+    /* --- PASTE THIS NEW CSS --- */
+
+/* 1. Make the thumbnail container a positioning context */
+.thumbnail-wrapper {
+    position: relative;
+    display: block; /* Ensures it behaves like a block element */
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    padding: 0.25rem;
+    background-color: #fff;
+    transition: box-shadow 0.2s;
+    overflow: hidden; /* Keeps the download button's rounded corners neat */
+}
+
+/* 2. Style the image inside the wrapper */
+.gallery-thumbnail {
+    display: block;
+    width: 100%;
+    transition: transform 0.3s ease;
+}
+
+/* 3. Style the download button */
+.btn-thumb-download {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    z-index: 2; /* Ensures it sits on top of the image */
+    
+    /* Styling for the button itself */
+    background-color: rgba(26, 26, 26, 0.7); /* Semi-transparent dark background */
+    color: white;
+    border: none;
+    border-radius: 50%; /* Makes it a circle */
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Hiding and transition for the hover effect */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* 4. Show the download button and zoom image on hover */
+.thumbnail-wrapper:hover .btn-thumb-download {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.thumbnail-wrapper:hover .gallery-thumbnail {
+    transform: scale(1.05); /* Slight zoom effect on the image */
+}
+
+/* --- END OF NEW CSS --- */
 </style>
 
 <main>
-    <div class="gallery-header">
-        <h1>Event Gallery</h1>
-        <p class="lead">See the highlights from <?php echo $org_title; ?>.</p>
+    <div class="hero-section">
+
+       <div class="hero-background-video">
+        <div class="hero-overlay"></div>
+        <video autoplay muted loop playsinline>
+            <source src="../assets/gallery1.mp4">
+        </video>
+     </div>
+
+     <div class="hero-content">
+     <h1>Gallery</h1>
+
     </div>
+
+</div>
 
     <div class="container gallery-container">
         <div class="row g-4">
             
-            <?php foreach ($gallery_images as $image): ?>
-            <div class="col-lg-4 col-md-6">
-                <a href="#" class="gallery-thumbnail-link" 
-                   data-bs-toggle="modal" 
-                   data-bs-target="#galleryModal" 
-                   data-bs-img-src="<?php echo htmlspecialchars($image['full']); ?>"
-                   data-bs-img-alt="<?php echo htmlspecialchars($image['alt']); ?>">
-                    
-                    <img src="<?php echo htmlspecialchars($image['thumb']); ?>" 
-                         alt="<?php echo htmlspecialchars($image['alt']); ?>" 
-                         class="img-fluid gallery-thumbnail">
-                </a>
-            </div>
-            <?php endforeach; ?>
+            <!-- REPLACE WITH THIS UPDATED HTML BLOCK -->
+<?php foreach ($gallery_images as $index => $image): ?>
+<div class="col-lg-4 col-md-6">
+    <div class="thumbnail-wrapper">
+        <!-- Link to open the modal -->
+        <a href="#" 
+           data-bs-toggle="modal" 
+           data-bs-target="#galleryModal" 
+           data-bs-img-src="<?php echo htmlspecialchars($image['full']); ?>"
+           data-bs-img-alt="<?php echo htmlspecialchars($image['alt']); ?>">
+
+            <img src="<?php echo htmlspecialchars($image['thumb']); ?>" 
+                 alt="<?php echo htmlspecialchars($image['alt']); ?>" 
+                 class="img-fluid gallery-thumbnail">
+        </a>
+
+        <?php
+        // We build the proxy URL here
+        $download_link = 'download.php?url=' . urlencode($image['full']) . '&name=event-photo-' . ($index + 1) . '.jpg';
+        ?>
+<a href="<?php echo $download_link; ?>" 
+   class="btn-thumb-download" 
+   title="Download image">
+    <i class="fas fa-download"></i>
+</a>
+    </div>
+</div>
+<?php endforeach; ?>
+<!-- END OF UPDATED BLOCK -->
 
         </div>
     </div>
@@ -153,9 +285,35 @@ document.addEventListener('DOMContentLoaded', function() {
         modalImage.src = imageUrl;
         modalImage.alt = imageAlt;
         modalTitle.textContent = imageAlt;
-        downloadButton.href = imageUrl; // +++ ADD THIS LINE
+        var imageName = 'event-photo-' + (button.closest('.col-lg-4').ariaRowIndex || 'modal') + '.jpg'; // Create a filename
+downloadButton.href = `download.php?url=${encodeURIComponent(imageUrl)}&name=${imageName}`;// +++ ADD THIS LINE
     });
 });
+
+const bgVideo = document.querySelector('.hero-background-video video');
+    
+    if (bgVideo) {
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY;
+
+            // --- 1. Calculate Parallax ---
+            // This moves the video vertically at 50% of the scroll speed.
+            // This creates the "parallax" effect.
+            const parallaxOffset = scrollPos * 0.9;
+
+            // --- 2. Calculate Blur ---
+            let blurAmount = (scrollPos / 300) * 8; 
+            if (blurAmount > 8) {
+                blurAmount = 8;
+            }
+            
+            // --- 3. Apply Both Styles ---
+            // We combine the original centering transform with our new parallax 'translateY'
+            // and apply the blur filter.
+            bgVideo.style.transform = `translate(-50%, -50%) translateY(${parallaxOffset}px)`;
+            bgVideo.style.filter = `blur(${blurAmount}px)`;
+        });
+    }
 </script>
 
 

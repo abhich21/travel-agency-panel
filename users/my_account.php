@@ -73,7 +73,7 @@ ob_start();
 
 <style>
     .account-header {
-        padding: 4rem 1.5rem;
+        padding: 2rem 1.5rem;
         text-align: center;
         background-color: #f8f9fa;
         border-bottom: 1px solid #dee2e6;
@@ -182,21 +182,57 @@ ob_start();
 
         <div class="tab-content" id="accountTabsContent">
             
-            <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
-                <h3 class="mb-4">My Registration Details</h3>
-                <?php if (!empty($user_data) && !empty($form_fields)): ?>
-                    <dl class="row">
-                        <?php foreach ($form_fields as $field_key => $field_label): ?>
-                            <?php if (isset($user_data[$field_key]) && $field_key != 'password' && $field_key != 'govt_id_link'): ?>
-                                <dt class="col-sm-3"><?php echo htmlspecialchars($field_label); ?></dt>
-                                <dd class="col-sm-9"><?php echo htmlspecialchars($user_data[$field_key]); ?></dd>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    </dl>
-                <?php else: ?>
-                    <p>Could not load user details.</p>
-                <?php endif; ?>
+           <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">My Registration Details</h3>
+        <button id="edit-details-btn" class="btn btn-outline-primary"><i class="fas fa-pencil-alt me-2"></i>Edit Details</button>
+    </div>
+
+    <div id="display-view">
+        <?php if (!empty($user_data) && !empty($form_fields)): ?>
+            <dl class="row">
+                <?php foreach ($form_fields as $field_key => $field_label): ?>
+                    <?php if (isset($user_data[$field_key]) && $field_key != 'password' && $field_key != 'govt_id_link'): ?>
+                        <dt class="col-sm-3" data-field="<?php echo $field_key; ?>-label"><?php echo htmlspecialchars($field_label); ?></dt>
+                        <dd class="col-sm-9" data-field="<?php echo $field_key; ?>-value"><?php echo htmlspecialchars($user_data[$field_key]); ?></dd>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </dl>
+        <?php else: ?>
+            <p>Could not load user details.</p>
+        <?php endif; ?>
+    </div>
+
+    <div id="edit-view" class="d-none">
+        <div id="edit-alert-placeholder"></div>
+        <form id="edit-account-form">
+            <div class="mb-3">
+                <label for="edit-name" class="form-label">Name</label>
+                <input type="text" class="form-control" id="edit-name" name="name" value="<?php echo htmlspecialchars($user_data['name'] ?? ''); ?>" required>
             </div>
+            <div class="mb-3">
+                <label for="edit-email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="edit-email" name="email" value="<?php echo htmlspecialchars($user_data['email'] ?? ''); ?>" required>
+            </div>
+            <div class="d-flex justify-content-end">
+                <button type="button" id="cancel-edit-btn" class="btn btn-secondary me-2">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+    <div id="success-card-view" class="text-center p-5 d-none">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle fa-4x text-success"></i>
+                </div>
+                <h2 class="card-title">Update Successful</h2>
+                <p class="lead">Your account details have been saved.</p>
+                <hr class="my-4">
+                <button id="close-success-card-btn" class="btn btn-primary">Done</button>
+            </div>
+</div>
 
             <div class="tab-pane fade" id="qr" role="tabpanel" aria-labelledby="qr-tab">
                 <div class="qr-code-display">
@@ -224,6 +260,96 @@ ob_start();
         </div>
     </div>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Get all the elements we need
+    const editBtn = document.getElementById('edit-details-btn');
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    const displayView = document.getElementById('display-view');
+    const editView = document.getElementById('edit-view');
+    const editForm = document.getElementById('edit-account-form');
+    const alertPlaceholder = document.getElementById('edit-alert-placeholder');
+    
+    // NEW: Get the success card elements
+    const successCardView = document.getElementById('success-card-view');
+    const closeSuccessCardBtn = document.getElementById('close-success-card-btn');
+
+    // Function to show an alert message (still used for errors)
+    const showAlert = (message, type) => {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = `<div class="alert alert-${type} alert-dismissible" role="alert">${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`;
+        alertPlaceholder.append(wrapper);
+    };
+
+    // Show the edit form when "Edit" is clicked
+    editBtn.addEventListener('click', () => {
+        displayView.classList.add('d-none');
+        editBtn.classList.add('d-none'); // Hide the edit button itself
+        editView.classList.remove('d-none');
+    });
+
+    // Go back to the display view when "Cancel" is clicked
+    cancelBtn.addEventListener('click', () => {
+        editView.classList.add('d-none');
+        displayView.classList.remove('d-none');
+        editBtn.classList.remove('d-none'); // Show the edit button again
+        alertPlaceholder.innerHTML = ''; 
+    });
+    
+    // NEW: Go back to display view when "Done" on success card is clicked
+    closeSuccessCardBtn.addEventListener('click', () => {
+        successCardView.classList.add('d-none');
+        displayView.classList.remove('d-none');
+        editBtn.classList.remove('d-none'); // Show the edit button again
+    });
+
+    // Handle the form submission
+    editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitButton = editForm.querySelector('button[type="submit"]');
+        const spinner = submitButton.querySelector('.spinner-border');
+
+        submitButton.disabled = true;
+        spinner.classList.remove('d-none');
+        alertPlaceholder.innerHTML = '';
+
+        const formData = new FormData(editForm);
+        const currentUrl = new URL(window.location.href);
+        const viewParam = currentUrl.searchParams.get('view');
+
+        try {
+            const response = await fetch(`api/update_account.php?view=${viewParam}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                // Update the display text in the background
+                document.querySelector('[data-field="name-value"]').textContent = result.data.name;
+                document.querySelector('[data-field="email-value"]').textContent = result.data.email;
+                document.querySelector('.account-header h1 + p').textContent = `Welcome, ${result.data.name}!`;
+                document.querySelector('.ticket-body h5').textContent = result.data.name;
+                document.querySelector('.ticket-body p').textContent = result.data.email;
+
+                // Hide the edit form and show the success card
+                editView.classList.add('d-none');
+                successCardView.classList.remove('d-none');
+
+            } else {
+                showAlert(result.message || 'An error occurred.', 'danger');
+            }
+        } catch (error) {
+            showAlert('A technical error occurred. Please try again.', 'danger');
+        } finally {
+            submitButton.disabled = false;
+            spinner.classList.add('d-none');
+        }
+    });
+});
+</script>
 
 <?php
 // --- 4. Store the captured HTML ---

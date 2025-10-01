@@ -3,7 +3,7 @@
 
 // --- 1. ESTABLISH DATABASE CONNECTION & THEME ---
 // This now runs first, making theme variables available to all pages.
-require_once '../config/config.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/travel-agency-panel/config/config.php';
 
 $nav_bg_color = "#1a1a1a";
 $nav_text_color = "#ffffff";
@@ -64,6 +64,9 @@ if (isset($_GET['view']) && !empty($_GET['view']) && isset($conn)) {
         if (isset($page_content_html)) {
             echo $page_content_html;
         }
+        // +++ INCLUDE THE NEW FOOTER FILE HERE +++
+        include 'footer.php';
+        
         ?>
     </div>
     
