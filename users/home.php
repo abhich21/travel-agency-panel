@@ -235,7 +235,7 @@ ob_start();
         <div class="hero-background-video">
             <div class="hero-overlay"></div>
             <video autoplay muted loop playsinline>
-                <source src="../assets/From KlickPin CF Pin by sasha on video engine wallpaper _ Light background images Overlays instagram Green screen video backgrounds.mp4" type="video/mp4">
+                <source src="../assets/home1.mp4" type="video/mp4">
             </video>
         </div> 
         <div class="hero-content">

@@ -211,7 +211,7 @@ ob_start();
        <div class="hero-background-video">
         <div class="hero-overlay"></div>
         <video autoplay muted loop playsinline>
-            <source src="../assets/agenda2.mp4">
+            <source src="../assets/agenda1.mp4">
         </video>
      </div>
      <div class="hero-content">
@@ -228,7 +228,7 @@ ob_start();
             <p class="text-center">Please check back later for the detailed event schedule.</p>
         <?php else: ?>
             <?php foreach ($agenda_by_day as $day_number => $items): ?>
-                <h2 class="day-header mt-5">Day <?php echo $day_number; ?></h2>
+                <h2 class="day-header mt-1">Day <?php echo $day_number; ?></h2>
                 <div class="timeline">
                     <?php foreach ($items as $item): ?>
                         <div class="timeline-item">
