@@ -75,10 +75,56 @@ $organization_id = $_SESSION['organization_id'];
                     </form>
                 </div>
             </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>Promoters</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table id="promotersTable" class="table table-striped table-bordered w-100">
+                            <thead>
+                                <tr>
+                                    <th>Promoter Username</th>
+                                    <th>Promoter Password</th>
+                                    <th>Created At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be loaded via AJAX -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
     <?php include 'footer.php'; ?>
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editPromoterModal" tabindex="-1" aria-labelledby="editPromoterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPromoterModalLabel">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editUserForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="promoter_id" id="editPromoterId">
+                        <div id="editFieldsContainer">
+                            <!-- Dynamic fields will be populated here -->
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     <style>
         .btn-custom {
             background-color: <?php echo $nav_bg_color; ?> !important;
@@ -106,6 +152,92 @@ $organization_id = $_SESSION['organization_id'];
                 echo "showSweetAlert('error', '" . addslashes($error) . "');";
             }
             ?>
+            let promotersTable;
+            let currentUniqueFields = {};
+            let isDataTableInitialized = false;
+
+            // Load data into the DataTable via AJAX
+            $.ajax({
+                url: 'api/get_promoters.php',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.data && response.data.length > 0) {
+                        const firstRow = response.data[0];
+                        
+                        // Filter out govt_id_link from the dynamic fields array to prevent duplication
+                        const filteredFields = firstRow.fields.filter(field => field.name !== 'govt_id_link');
+
+                        // Dynamically create headers and columns based on the filtered 'fields' array
+                        const columns = filteredFields.map(field => ({
+                            // Use a function to correctly access the nested data
+                            data: function(row, type, set, meta) {
+                                const foundField = row.fields.find(f => f.name === field.name);
+                                return foundField ? foundField.value : '';
+                            },
+                            title: field.name.replace(/_/g, ' ').toUpperCase()
+                        }));
+
+                        // Add top-level fields like qr_code and govt_id_link as separate columns
+                        if (firstRow.qr_code) {
+                            headers.push('QR_Code');
+                            columns.push({
+                                data: 'qr_code',
+                                title: 'QR Code',
+                                render: function(data, type, row) {
+                                    return `<img src="${data}" alt="QR Code" style="width: 50px; height: 50px; cursor: pointer;" class="image-link" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="${data}">`;
+                                }
+                            });
+                        }
+                        
+                        if (firstRow.govt_id_link) {
+                            headers.push('Govt_ID');
+                            columns.push({
+                                data: 'govt_id_link',
+                                title: 'Govt ID',
+                                render: function(data, type, row) {
+                                    return `<img src="${data}" alt="Govt ID" style="width: 50px; height: 50px; cursor: pointer;" class="image-link" data-bs-toggle="modal" data-bs-target="#imageModal" data-image-url="${data}">`;
+                                }
+                            });
+                        }
+
+                        // Add the 'Actions' column
+                        headers.push('Actions');
+                        columns.push({
+                            data: null,
+                            title: 'Actions',
+                            render: function(data, type, row) {
+                                return `
+                                    <button class="btn btn-sm btn-info edit-btn" data-id="${row.id}"><i class="fas fa-edit"></i> Edit</button>
+                                    <button class="btn btn-sm btn-danger delete-btn" data-id="${row.id}"><i class="fas fa-trash"></i> Delete</button>
+                                `;
+                            }
+                        });
+
+                        
+                        // Destroy existing DataTable instance if it exists
+                        if ($.fn.DataTable.isDataTable('#promotersTable')) {
+                            promotersTable.destroy();
+                        }
+                        
+                        promotersTable = $('#promotersTable').DataTable({
+                            data: response.data,
+                            columns: columns,
+                            pageLength: 10,
+                            lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "All"]],
+                            responsive: true
+                        });
+                        isDataTableInitialized = true;
+                    } else {
+                        // Display "No data found" if the response is empty
+                        $('#promotersTable').html('<p class="text-center mt-4">No data found.</p>');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("AJAX Error: ", textStatus, errorThrown);
+                    $('#promotersTable').html('<p class="text-center mt-4 text-danger">An error occurred while fetching data. Please try again later.</p>');
+                }
+            });
 
             // Handle form submission with AJAX for single user
             $('#addPromoterForm').on('submit', function(e) {

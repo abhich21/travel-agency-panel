@@ -46,6 +46,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <a class="nav-link <?php echo ($current_page == 'registration_fields.php') ? 'active fw-bold' : ''; ?>" href="registration_fields.php" style="color: <?php echo $nav_text_color; ?>;">Registration</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link <?php echo ($current_page == 'promoters.php') ? 'active fw-bold' : ''; ?>" href="promoters.php" style="color: <?php echo $nav_text_color; ?>;">Promoters</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link <?php echo ($current_page == 'logout.php') ? 'active fw-bold' : ''; ?>" href="logout.php" style="color: <?php echo $nav_text_color; ?>;">Logout</a>
                 </li>
             </ul>
