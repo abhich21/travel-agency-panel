@@ -175,7 +175,7 @@ ob_start();
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="ticket-tab" data-bs-toggle="tab" data-bs-target="#ticket" type="button" role="tab" aria-controls="ticket" aria-selected="false">
-                    <i class="fas fa-ticket-alt me-2"></i>My Ticket
+                    <i class="fas fa-ticket-alt me-2"></i>My Pass
                 </button>
             </li>
         </ul>
