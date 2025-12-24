@@ -26,6 +26,11 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                         <i class="fas fa-user-plus me-1"></i> Create User
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white <?php echo ($currentPage == 'view_cab_logistics.php') ? 'active fw-bold' : ''; ?>" href="view_cab_logistics.php">
+                        <i class="fas fa-route me-1"></i> Cab Logistics
+                    </a>
+                </li>
                 <?php endif; ?>
             </ul>
             <ul class="navbar-nav">

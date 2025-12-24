@@ -11,6 +11,40 @@ $logo_url = '';
 $org_title = 'Event Portal'; // Default title
 $organization_id = null;
 
+// Check if view parameter is provided
+if (!isset($_GET['view']) || empty($_GET['view'])) {
+    // Show friendly error page
+    ?>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login - Event Portal</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <body class="bg-light">
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card shadow">
+                        <div class="card-body text-center p-5">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h3>Organization Not Specified</h3>
+                            <p class="text-muted">Please access the login page through your organization's event link.</p>
+                            <p class="small text-muted">The URL should look like: <code>login.php?view=YourOrganization</code></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
+    exit;
+}
+
 if (isset($_GET['view']) && !empty($_GET['view']) && isset($conn)) {
     $organization_title = $_GET['view'];
     $stmt = $conn->prepare("SELECT id, title, logo_url, bg_color, text_color FROM organizations WHERE title = ? LIMIT 1");
@@ -38,13 +72,12 @@ ob_start();
     top: 0; left: 0;
     width: 100%;
     height: 100%;
-    z-index: 1; /* Sits behind content */
-    overflow: hidden; /* Hides any part of the video spilling out */
-    background-attachment: fixed !important; /* This keeps the image still (parallax) */
+    z-index: 1;
+    overflow: hidden;
+    background-attachment: fixed !important;
 }
 
 .hero-background-video video {
-    /* This combo acts like 'background-size: cover' for a video */
     min-width: 100%;
     min-height: 100%;
     width: auto;
@@ -53,30 +86,24 @@ ob_start();
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    
-    /* This keeps your scroll-blur effect */
     transition: filter 0.2s ease-out;
 }
 
 .hero-overlay {
-    /* This is the transparent black gradient */
     position: absolute;
     top: 0; left: 0;
     width: 100%;
     height: 100%;
     background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6));
-    z-index: 2; /* Sits on top of the video */
+    z-index: 2;
 }
 
-
-  .hero-section {
-    /* This is now just a container */
+.hero-section {
     position: relative;
-    overflow: hidden; /* This contains the blurred edges of the image */
+    overflow: hidden;
 }
-    /* We can reuse the style from registration.php for consistency */
     .login-form-container {
-        max-width: 500px; /* Login forms are usually narrower */
+        max-width: 500px;
         margin: 3rem auto;
         padding: 2rem;
         background-color: #fff;
@@ -147,25 +174,22 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         event.stopPropagation();
 
-        // Hide previous alerts
         successCard.classList.add('d-none');
         errorCard.classList.add('d-none');
 
-        // Simple client-side validation
         if (!form.checkValidity()) {
             form.classList.add('was-validated');
             return;
         }
         form.classList.add('was-validated');
 
-        // Disable button and show spinner
         submitButton.disabled = true;
         spinner.classList.remove('d-none');
 
         const formData = new FormData(form);
 
         try {
-            const response = await fetch(form.action, { // form.action gets the URL from the HTML
+            const response = await fetch(form.action, {
                 method: 'POST',
                 body: formData
             });
@@ -177,17 +201,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (result.status === 'success') {
-                // --- SUCCESS ---
                 successMessage.textContent = result.message || 'Login successful! Redirecting...';
                 successCard.classList.remove('d-none');
 
-                // Redirect the user to their QR page after 2 seconds
                 setTimeout(() => {
                     window.location.href = result.redirectUrl;
                 }, 2000);
 
             } else {
-                // --- FAILURE ---
                 errorMessage.textContent = result.message || 'An unknown error occurred.';
                 errorCard.classList.remove('d-none');
                 submitButton.disabled = false;
@@ -208,21 +229,13 @@ const bgVideo = document.querySelector('.hero-background-video video');
     if (bgVideo) {
         window.addEventListener('scroll', () => {
             const scrollPos = window.scrollY;
-
-            // --- 1. Calculate Parallax ---
-            // This moves the video vertically at 50% of the scroll speed.
-            // This creates the "parallax" effect.
             const parallaxOffset = scrollPos * 0.9;
 
-            // --- 2. Calculate Blur ---
             let blurAmount = (scrollPos / 300) * 8; 
             if (blurAmount > 8) {
                 blurAmount = 8;
             }
             
-            // --- 3. Apply Both Styles ---
-            // We combine the original centering transform with our new parallax 'translateY'
-            // and apply the blur filter.
             bgVideo.style.transform = `translate(-50%, -50%) translateY(${parallaxOffset}px)`;
             bgVideo.style.filter = `blur(${blurAmount}px)`;
         });
@@ -237,5 +250,5 @@ $page_content_html = ob_get_clean();
 $page_title = 'Login';
 
 // --- 5. Include the Master Layout ---
-include 'layout.php'; // This layout file contains the navbar
+include 'layout.php';
 ?>

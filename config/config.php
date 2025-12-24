@@ -2,8 +2,6 @@
 // Add this line at the top of your config.php file
 define('BASE_URL', '/travel-agency-panel');
 //Note: This file should be included first in every php page.
-error_reporting(E_ALL);
-ini_set('display_errors', 'On');
 define('CURRENT_PAGE', basename($_SERVER['REQUEST_URI']));
 
 // echo(CURRENT_PAGE);
@@ -19,6 +17,10 @@ require __DIR__ . '/../vendor/autoload.php';
 // DOTENV
 $dotenv = Dotenv\Dotenv::createImmutable(dirname(__DIR__));
 $dotenv->load();
+
+// Load environment-based error handler (must be after dotenv)
+require_once __DIR__ . '/error_handler.php';
+
 
 // e.g., localhost
 $servername = $_ENV['DB_SERVERNAME'];
@@ -49,7 +51,7 @@ if ($conn->connect_error) {
 // Hardcoded admin credentials
 // $adminEmail = 'admin@example.com';
 // $adminPassword = '123456';
-$apiBaseUrl='http://localhost/hunt/admin/api/index.php';
+$apiBaseUrl = 'http://localhost/hunt/admin/api/index.php';
 $draw_passkey = '9876';
 
 
@@ -65,7 +67,7 @@ $draw_passkey = '9876';
 
 //timezone
 date_default_timezone_set("Asia/Calcutta");   //India time (GMT+5:30)
-$dbTimeZone="'+05:30'";
+$dbTimeZone = "'+05:30'";
 
 
 

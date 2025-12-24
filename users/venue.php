@@ -178,6 +178,7 @@ ob_start();
         <div class="row g-5">
             <div class="col-lg-7">
 
+              <!-- Google Maps Section - Hidden
               <div class="map-container mb-4">
         <iframe
             width="600"
@@ -189,6 +190,7 @@ ob_start();
             src="<?php echo $embed_map_url; ?>">
         </iframe>
     </div>
+              -->
                 
             <div class="col-lg-5">
                 <div class="venue-details">

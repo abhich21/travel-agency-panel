@@ -14,7 +14,7 @@ php_config.php
 
 # PHP temporary files and logs
 *.log
-*.sql
+
 /temp/
 /tmp/
 

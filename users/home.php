@@ -293,7 +293,7 @@ ob_start();
                     </div>
                 </div>
                 <div class="col-md-3 mb-4">
-                    <div class="feature-card h-100" onclick="location.href='agenda.php#agenda-dress-code'" style="cursor: pointer;">
+                    <div class="feature-card h-100" onclick="location.href='agenda.php?view=<?php echo urlencode($org_title); ?>#agenda-dress-code'" style="cursor: pointer;">
                         <div class="icon-circle">
                             <i class="fas fa-tshirt fa-2x"></i>
                         </div>

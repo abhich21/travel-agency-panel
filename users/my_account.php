@@ -67,6 +67,38 @@ if (isset($_GET['view']) && !empty($_GET['view']) && isset($conn)) {
     $stmt_org->close();
 }
 
+// --- Fetch Cab Assignment Data ---
+$cab_assignment = null;
+if (!empty($user_data['id']) && isset($organization_id)) {
+    $stmt_cab = $conn->prepare("
+        SELECT 
+            cs.schedule_date,
+            cs.pickup_time,
+            cs.trip_type,
+            cs.pickup_location,
+            cs.drop_location,
+            cs.status,
+            cs.notes,
+            cd.cab_number,
+            cd.cab_name,
+            cd.cab_type,
+            cd.driver_name,
+            cd.driver_phone
+        FROM cab_schedule cs
+        JOIN cab_details cd ON cs.cab_id = cd.id
+        WHERE cs.user_id = ? AND cs.organization_id = ? AND cs.status != 'cancelled'
+        ORDER BY cs.schedule_date DESC, cs.pickup_time DESC
+        LIMIT 1
+    ");
+    $stmt_cab->bind_param("ii", $user_data['id'], $organization_id);
+    $stmt_cab->execute();
+    $result_cab = $stmt_cab->get_result();
+    if ($cab_data = $result_cab->fetch_assoc()) {
+        $cab_assignment = $cab_data;
+    }
+    $stmt_cab->close();
+}
+
 // --- 3. Start Output Buffering ---
 ob_start();
 ?>
@@ -175,7 +207,12 @@ ob_start();
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="ticket-tab" data-bs-toggle="tab" data-bs-target="#ticket" type="button" role="tab" aria-controls="ticket" aria-selected="false">
-                    <i class="fas fa-ticket-alt me-2"></i>My Pass
+                    <i class="fas fa-ticket-alt me-2"></i>My Ticket
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="cab-tab" data-bs-toggle="tab" data-bs-target="#cab" type="button" role="tab" aria-controls="cab" aria-selected="false">
+                    <i class="fas fa-taxi me-2"></i>My Cab
                 </button>
             </li>
         </ul>
@@ -246,15 +283,100 @@ ob_start();
             </div>
 
             <div class="tab-pane fade" id="ticket" role="tabpanel" aria-labelledby="ticket-tab">
-                <div class="ticket-stub">
-                    <div class="ticket-header">
-                        <h4>EVENT TICKET FOR</h4>
-                        <h2><?php echo $org_title; ?></h2>
+                <div class="text-center p-4">
+                    <h3 class="mb-4"><i class="fas fa-ticket-alt me-2"></i>Your Event Ticket</h3>
+                    
+                    <!-- PDF Viewer Placeholder -->
+                    <div class="pdf-viewer-placeholder mx-auto mb-4" style="max-width: 500px; background-color: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 0.5rem; padding: 3rem 2rem;">
+                        <i class="fas fa-file-pdf fa-4x text-danger mb-3"></i>
+                        <h5>Event Ticket</h5>
+                        <p class="text-muted mb-0"><?php echo htmlspecialchars($user_data['name'] ?? 'Guest'); ?></p>
+                        <p class="text-muted small"><?php echo $org_title; ?></p>
+                        <hr>
+                        <p class="small text-muted mb-0"><i class="fas fa-info-circle me-1"></i>Click below to download your personalized ticket</p>
                     </div>
-                    <div class="ticket-body">
-                        <h5><?php echo htmlspecialchars($user_data['name'] ?? 'Guest'); ?></h5>
-                        <p><?php echo htmlspecialchars($user_data['email'] ?? ''); ?></p>
-                    </div>
+                    
+                    <!-- Download Button -->
+                    <a href="api/download_ticket.php?view=<?php echo urlencode($org_title); ?>" class="btn btn-lg text-white" style="background-color: <?php echo $nav_bg_color; ?>;">
+                        <i class="fas fa-download me-2"></i>Download Ticket
+                    </a>
+                    <p class="text-muted small mt-3"><i class="fas fa-file-pdf me-1"></i>PDF format</p>
+                </div>
+            </div>
+
+            <!-- My Cab Tab -->
+            <div class="tab-pane fade" id="cab" role="tabpanel" aria-labelledby="cab-tab">
+                <div class="text-center">
+                    <h3 class="mb-4"><i class="fas fa-taxi me-2"></i>Your Cab Assignment</h3>
+                    <?php if ($cab_assignment): ?>
+                        <div class="card mx-auto" style="max-width: 450px; border: 2px solid <?php echo $nav_bg_color; ?>;">
+                            <div class="card-header text-white" style="background-color: <?php echo $nav_bg_color; ?>;">
+                                <h5 class="mb-0">
+                                    <?php echo htmlspecialchars($cab_assignment['cab_name'] ?: $cab_assignment['cab_number']); ?>
+                                </h5>
+                                <small><?php echo ucfirst($cab_assignment['cab_type']); ?></small>
+                            </div>
+                            <div class="card-body text-start">
+                                <div class="mb-3">
+                                    <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                    <strong>Date:</strong> <?php echo date('F j, Y', strtotime($cab_assignment['schedule_date'])); ?>
+                                </div>
+                                <div class="mb-3">
+                                    <i class="fas fa-clock text-primary me-2"></i>
+                                    <strong>Pickup Time:</strong> <?php echo date('h:i A', strtotime($cab_assignment['pickup_time'])); ?>
+                                </div>
+                                <div class="mb-3">
+                                    <i class="fas fa-route text-primary me-2"></i>
+                                    <strong>Trip Type:</strong> 
+                                    <span class="badge bg-secondary"><?php echo ucfirst(str_replace('_', ' ', $cab_assignment['trip_type'])); ?></span>
+                                </div>
+                                <?php if ($cab_assignment['pickup_location']): ?>
+                                <div class="mb-3">
+                                    <i class="fas fa-map-marker-alt text-success me-2"></i>
+                                    <strong>Pickup:</strong> <?php echo htmlspecialchars($cab_assignment['pickup_location']); ?>
+                                </div>
+                                <?php endif; ?>
+                                <?php if ($cab_assignment['drop_location']): ?>
+                                <div class="mb-3">
+                                    <i class="fas fa-map-pin text-danger me-2"></i>
+                                    <strong>Drop:</strong> <?php echo htmlspecialchars($cab_assignment['drop_location']); ?>
+                                </div>
+                                <?php endif; ?>
+                                <hr>
+                                <div class="mb-2">
+                                    <i class="fas fa-user text-muted me-2"></i>
+                                    <strong>Driver:</strong> <?php echo htmlspecialchars($cab_assignment['driver_name'] ?: 'TBA'); ?>
+                                </div>
+                                <?php if ($cab_assignment['driver_phone']): ?>
+                                <div class="mb-3">
+                                    <i class="fas fa-phone text-muted me-2"></i>
+                                    <strong>Phone:</strong> 
+                                    <a href="tel:<?php echo $cab_assignment['driver_phone']; ?>">
+                                        <?php echo htmlspecialchars($cab_assignment['driver_phone']); ?>
+                                    </a>
+                                </div>
+                                <?php endif; ?>
+                                <div class="text-center mt-3">
+                                    <?php 
+                                    $status_classes = [
+                                        'scheduled' => 'bg-info',
+                                        'in_progress' => 'bg-warning text-dark',
+                                        'completed' => 'bg-success'
+                                    ];
+                                    $status_class = $status_classes[$cab_assignment['status']] ?? 'bg-secondary';
+                                    ?>
+                                    <span class="badge <?php echo $status_class; ?> fs-6">
+                                        <?php echo ucfirst(str_replace('_', ' ', $cab_assignment['status'])); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php else: ?>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No cab has been assigned to you yet. Please check back later.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

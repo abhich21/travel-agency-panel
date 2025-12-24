@@ -45,6 +45,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <li class="nav-item">
         <a class="nav-link <?php echo ($current_page == 'registration_fields.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/admin/registration_fields.php" style="color: <?php echo $nav_text_color; ?>;">Registration</a>
     </li>
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle <?php echo (in_array($current_page, ['manage_cabs.php', 'manage_cab_schedule.php'])) ? 'active fw-bold' : ''; ?>" href="#" id="cabsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: <?php echo $nav_text_color; ?>;">
+            Cabs
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="cabsDropdown">
+            <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/admin/manage_cabs.php"><i class="fas fa-taxi me-2"></i>Manage Cabs</a></li>
+            <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>/admin/manage_cab_schedule.php"><i class="fas fa-calendar-alt me-2"></i>Cab Scheduling</a></li>
+        </ul>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?php echo ($current_page == 'manage_ticket_template.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/admin/manage_ticket_template.php" style="color: <?php echo $nav_text_color; ?>;"><i class="fas fa-ticket-alt me-1"></i>Ticket</a>
+    </li>
     <li class="nav-item">
         <a class="nav-link <?php echo ($current_page == 'admin_chat.php') ? 'active fw-bold' : ''; ?>" href="<?php echo BASE_URL; ?>/users/chatbot/admin_chat.php" style="color: <?php echo $nav_text_color; ?>;">Live Chat</a>
     </li>
